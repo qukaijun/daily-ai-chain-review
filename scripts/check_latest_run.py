@@ -64,6 +64,24 @@ def _match_file(prefix: str, token: str, suffix: str) -> Path | None:
     return path if path.exists() else None
 
 
+def _latest_complete_run(require_market_sources: bool = False) -> tuple[Path | None, Path | None, Path | None]:
+    analyses = sorted(OUTPUT_DIR.glob("analysis_*.json"), key=lambda item: item.stat().st_mtime, reverse=True)
+    latest = analyses[0] if analyses else None
+    for analysis_path in analyses:
+        token = _token(analysis_path)
+        report_path = _match_file("report_full_", token, ".html")
+        market_path = _match_file("market_sources_", token, ".json")
+        if not report_path:
+            continue
+        if require_market_sources and not market_path:
+            continue
+        return analysis_path, report_path, market_path
+    if not latest:
+        return None, None, None
+    token = _token(latest)
+    return latest, _match_file("report_full_", token, ".html"), _match_file("market_sources_", token, ".json")
+
+
 def _source_status(analysis: dict[str, Any], market_data: dict[str, Any]) -> list[dict[str, Any]]:
     status = analysis.get("data_source_status")
     if isinstance(status, list):
@@ -98,10 +116,8 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    analysis_path = _latest("analysis_*.json")
+    analysis_path, report_path, market_path = _latest_complete_run(args.require_market_sources)
     analysis_token = _token(analysis_path)
-    report_path = _match_file("report_full_", analysis_token, ".html") or _latest("report_full_*.html")
-    market_path = _match_file("market_sources_", analysis_token, ".json")
     analysis = _read_json(analysis_path)
     market_data = _read_json(market_path)
 
