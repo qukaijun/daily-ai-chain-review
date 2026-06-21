@@ -38,7 +38,7 @@ h1{font-size:26px;margin:10px 0 6px;letter-spacing:0}
 .section h2{font-size:20px;margin-bottom:6px}
 .section-kicker{font-size:12px;color:var(--accent);font-weight:800;margin-bottom:4px}
 .section-sub{font-size:13px;color:var(--text-muted);margin-bottom:16px}
-.dashboard-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.55fr);gap:14px;align-items:stretch;margin-bottom:14px}
+.dashboard-grid{display:block;margin-bottom:14px}
 .butler-card{background:var(--bg-card);border:1px solid var(--accent);border-radius:var(--radius);padding:16px}
 .butler-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px}
 .butler-head h2{font-size:22px;margin:0}
@@ -54,12 +54,6 @@ h1{font-size:26px;margin:10px 0 6px;letter-spacing:0}
 .ops-panel{display:grid;gap:10px}
 .compact-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
 .compact-title{font-size:13px;font-weight:800;margin-bottom:8px}
-.identity-card{background:var(--bg-card);border:1px solid var(--accent);border-radius:var(--radius);padding:14px;height:100%;display:flex;flex-direction:column;gap:10px}
-.identity-row{border-bottom:1px solid var(--line);padding-bottom:8px}
-.identity-row:last-child{border-bottom:none;padding-bottom:0}
-.identity-label{font-size:11px;color:var(--text-muted);margin-bottom:3px}
-.identity-value{font-size:13px;font-weight:800;line-height:1.45}
-.identity-tip{font-size:12px;color:#7A5B2D;background:#FFF4E6;border:1px solid #E8C991;border-radius:6px;padding:8px;line-height:1.55}
 .source-chips{display:flex;gap:8px;flex-wrap:wrap}
 .source-chip{display:inline-block;border-radius:20px;padding:4px 9px;font-size:12px;font-weight:700}
 .flow-rail{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:18px}
@@ -67,8 +61,8 @@ h1{font-size:26px;margin:10px 0 6px;letter-spacing:0}
 .flow-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-bottom:6px}
 .flow-name{font-size:13px;font-weight:800;margin-bottom:4px}
 .flow-note{font-size:11px;color:var(--text-muted);line-height:1.45}
-.chain-strip{display:flex;align-items:stretch;gap:6px;overflow:auto;padding:4px 0 8px}
-.chain-node{min-width:128px;flex:1;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:10px}
+.chain-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:4px 0 8px}
+.chain-node{min-width:0;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:10px}
 .chain-node.positive{border-top:4px solid var(--up)}
 .chain-node.negative{border-top:4px solid var(--down)}
 .chain-node.neutral{border-top:4px solid #8A817A}
@@ -77,8 +71,10 @@ h1{font-size:26px;margin:10px 0 6px;letter-spacing:0}
 .chain-node.positive .chain-score{color:var(--up)}
 .chain-node.negative .chain-score{color:var(--down)}
 .chain-dir{font-size:11px;color:var(--text-muted)}
-.chain-arrow{align-self:center;color:var(--accent);font-weight:800}
+.chain-arrow{display:none}
 .front-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.chain-analysis{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,.75fr);gap:14px;align-items:stretch}
+.chain-analysis .chart-card{height:100%}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
 .metric-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
 .metric-card.positive{border-left:4px solid var(--up)}
@@ -142,7 +138,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12p
 @media(max-width:768px){
   .hero,.content,.footer{padding-left:18px;padding-right:18px}
   .summary-strip{grid-template-columns:1fr 1fr;padding:14px 18px}
-  .dashboard-grid,.front-grid{grid-template-columns:1fr}
+  .front-grid,.chain-analysis{grid-template-columns:1fr}
   .flow-rail{grid-template-columns:1fr 1fr}
   .butler-grid{grid-template-columns:1fr 1fr 1fr}
   .chain-strip{display:grid;grid-template-columns:1fr 1fr}
@@ -180,32 +176,16 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12p
   <main class="content">
     <section class="dashboard-grid">
       {{BUTLER_CONCLUSION}}
-      <aside class="identity-card">
-        <div class="identity-row">
-          <div class="identity-label">生成方</div>
-          <div class="identity-value">Daily AI Chain Review 本地工作流</div>
-        </div>
-        <div class="identity-row">
-          <div class="identity-label">方法</div>
-          <div class="identity-value">大盘日报底座 + TradingAgents 式多角色层</div>
-        </div>
-        <div class="identity-row">
-          <div class="identity-label">今日首要主线</div>
-          <div class="identity-value">{{PRIMARY_SEGMENT}}</div>
-        </div>
-        <div class="identity-row">
-          <div class="identity-label">生成时间</div>
-          <div class="identity-value">{{GENERATED_AT}}</div>
-        </div>
-        <div class="identity-tip">基本提示：本报告是研究辅助，不构成投资建议；低证据事件只进验证池，公告/财报等高等级证据经人工复核后才可更新核心假设。</div>
-      </aside>
     </section>
 
     <section class="section">
-      <div class="section-kicker">产业链条</div>
-      <h2>AI产业链传导</h2>
-      <div class="section-sub">从上游算力、服务器、光通信，到下游模型和应用，第一眼看清哪段在变强、哪段承压。</div>
-      {{INDUSTRY_CHAIN_STRIP}}
+      <div class="section-kicker">产业链强弱分析</div>
+      <h2>AI产业链传导与热力</h2>
+      <div class="section-sub">链条视图看上下游传导顺序，右侧热力图看各环节分数强弱；两者合并展示，避免重复。</div>
+      <div class="chain-analysis">
+        {{INDUSTRY_CHAIN_STRIP}}
+        <div class="chart-card"><div class="chart-wrap"><canvas id="segmentChart"></canvas></div></div>
+      </div>
     </section>
 
     <section class="section">
@@ -235,18 +215,6 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12p
           </table>
         </div>
       </div>
-    </section>
-
-    <section class="section">
-      <h2>产业链热力图</h2>
-      <div class="section-sub">按事件方向、权重和证据等级加权，分数为研究跟踪信号，不是交易指令。</div>
-      <div class="chart-card"><div class="chart-wrap"><canvas id="segmentChart"></canvas></div></div>
-    </section>
-
-    <section class="section">
-      <h2>产业链分层</h2>
-      <div class="section-sub">用于观察事件影响集中在哪些环节。</div>
-      <div class="grid">{{SEGMENT_CARDS}}</div>
     </section>
 
     <section class="section">

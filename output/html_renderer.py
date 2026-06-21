@@ -605,11 +605,8 @@ def render_report(analysis: dict[str, Any], output_path: str | Path | None = Non
     summary = analysis.get("summary", {})
     top_segments = summary.get("top_segments", [])
     mainline = "、".join(s.get("label", "") for s in top_segments) or "暂无主线"
-    primary_segment = str(top_segments[0].get("label") if top_segments else "暂无主线")
-
     reps = {
         "{{GENERATED_AT}}": analysis.get("generated_at", ""),
-        "{{PRIMARY_SEGMENT}}": _esc(primary_segment),
         "{{EVENT_COUNT}}": str(summary.get("event_count", 0)),
         "{{POSITIVE_COUNT}}": str(summary.get("positive_count", 0)),
         "{{NEGATIVE_COUNT}}": str(summary.get("negative_count", 0)),
@@ -625,7 +622,6 @@ def render_report(analysis: dict[str, Any], output_path: str | Path | None = Non
         "{{SOURCE_STATUS_CARDS}}": _source_status_cards(analysis.get("data_source_status", [])),
         "{{FRONT_EVENT_ROWS}}": _front_event_rows(analysis.get("events", [])),
         "{{FOCUS_STOCK_ROWS}}": _focus_stock_rows(analysis.get("stock_impact", [])),
-        "{{SEGMENT_CARDS}}": _segment_cards(analysis.get("segment_heat", [])),
         "{{EVENT_ROWS}}": _events_rows(analysis.get("events", [])),
         "{{SOURCE_STATUS_ROWS}}": _source_status_rows(analysis.get("data_source_status", [])),
         "{{VERIFICATION_UPDATE_NOTE}}": _verification_update_note(analysis.get("verification_update_status", {})),
