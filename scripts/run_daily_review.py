@@ -98,6 +98,7 @@ def main() -> int:
                 [sys.executable, "scripts/validate_events.py"],
                 [sys.executable, "scripts/validate_verifications.py"],
                 [sys.executable, "scripts/check_secrets.py"],
+                [sys.executable, "scripts/check_trading_calendar.py"],
                 [sys.executable, "scripts/check_multi_agent_layer.py"],
                 [sys.executable, "scripts/check_deep_agent_config.py"],
                 [sys.executable, "scripts/check_verification_clusters.py"],

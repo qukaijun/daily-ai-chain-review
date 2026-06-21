@@ -20,11 +20,12 @@ python scripts/run_daily_review.py
 2. `scripts/validate_events.py`
 3. `scripts/validate_verifications.py`
 4. `scripts/check_secrets.py`
-5. `scripts/check_multi_agent_layer.py`
-6. `scripts/check_deep_agent_config.py`
-7. `scripts/check_verification_clusters.py`
-8. `main.py --fetch-market`
-9. `scripts/check_latest_run.py --require-market-sources`
+5. `scripts/check_trading_calendar.py`
+6. `scripts/check_multi_agent_layer.py`
+7. `scripts/check_deep_agent_config.py`
+8. `scripts/check_verification_clusters.py`
+9. `main.py --fetch-market`
+10. `scripts/check_latest_run.py --require-market-sources`
 
 日志和运行摘要写入：
 
@@ -60,15 +61,25 @@ Perplexity 未配置时，对应 provider 会显示 `empty`，但只要其他数
 - 默认盘后可用时间为 `17:00`；
 - 交易日 `17:00` 之后，目标复盘日为当天；
 - 交易日 `17:00` 之前、周末或节假日，目标复盘日为上一交易日；
-- 可通过 `DAA_MARKET_HOLIDAYS` 和 `DAA_MARKET_EXTRA_TRADING_DAYS` 手工维护节假日和补班交易日。
+- 优先读取 `market_calendar/calendars/cn_a_YYYY.json` 年度日历文件；
+- 可通过 `DAA_MARKET_HOLIDAYS` 和 `DAA_MARKET_EXTRA_TRADING_DAYS` 临时补充节假日和补班交易日。
 
 检查当前窗口：
 
 ```powershell
 python scripts/check_trading_window.py
+python scripts/check_trading_calendar.py
 python scripts/check_trading_window.py --now "2026-06-22 00:10:00"
 python scripts/run_daily_review.py --review-date 2026-06-21 --no-fetch-market
 ```
+
+当前内置年度文件：
+
+```text
+market_calendar/calendars/cn_a_2026.json
+```
+
+该文件记录来源、发布日期、URL、工作日休市日期和补充交易日。周末默认非交易日，不需要重复写入年度文件。
 
 配置项：
 

@@ -42,6 +42,8 @@ DAA_MARKET_HOLIDAYS=2026-01-01,2026-02-17
 DAA_MARKET_EXTRA_TRADING_DAYS=
 ```
 
+`DAA_MARKET_HOLIDAYS` 和 `DAA_MARKET_EXTRA_TRADING_DAYS` 只用于临时覆盖。正式年度日历文件放在 `market_calendar/calendars/`，不需要密钥。
+
 ## 检查
 
 `scripts/check_search_config.py` 只显示 key 是否存在、长度和脱敏片段，不打印完整 key。

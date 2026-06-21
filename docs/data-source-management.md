@@ -241,3 +241,5 @@ python scripts/run_daily_review.py --deep-agents
 python scripts/check_latest_run.py --review-date 2026-06-21 --require-market-sources
 python scripts/notify_daily_review.py --dry-run --review-date 2026-06-21 --require-market-sources
 ```
+
+交易日历优先读取 `market_calendar/calendars/cn_a_YYYY.json` 年度文件，文件内保留官方来源 URL、发布日期和休市日期清单。环境变量只用于临时补充，不作为主数据源。
