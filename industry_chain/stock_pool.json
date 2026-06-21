@@ -1,0 +1,79 @@
+{
+  "compute_chips": {
+    "label": "算力芯片/HBM/封装",
+    "description": "GPU、ASIC、HBM、先进封装、半导体设备与材料。",
+    "stocks": [
+      {"market": "A", "code": "688256", "name": "寒武纪", "role": "国产AI芯片"},
+      {"market": "A", "code": "688041", "name": "海光信息", "role": "服务器CPU/DCU"},
+      {"market": "A", "code": "688361", "name": "中科飞测", "role": "半导体检测设备"},
+      {"market": "US", "code": "NVDA", "name": "英伟达", "role": "GPU与AI算力生态"},
+      {"market": "US", "code": "AMD", "name": "AMD", "role": "GPU/CPU"},
+      {"market": "US", "code": "TSM", "name": "台积电", "role": "先进制程代工"}
+    ]
+  },
+  "ai_servers": {
+    "label": "AI服务器/PCB/电源",
+    "description": "AI服务器、PCB、高速连接、电源与整机代工。",
+    "stocks": [
+      {"market": "A", "code": "601138", "name": "工业富联", "role": "AI服务器代工"},
+      {"market": "A", "code": "000977", "name": "浪潮信息", "role": "服务器整机"},
+      {"market": "A", "code": "002463", "name": "沪电股份", "role": "高速PCB"},
+      {"market": "A", "code": "002938", "name": "鹏鼎控股", "role": "PCB"},
+      {"market": "US", "code": "SMCI", "name": "Super Micro", "role": "AI服务器"}
+    ]
+  },
+  "optical_modules": {
+    "label": "光模块/交换机/通信",
+    "description": "高速光模块、交换机、光芯片与数据中心网络。",
+    "stocks": [
+      {"market": "A", "code": "300308", "name": "中际旭创", "role": "高速光模块"},
+      {"market": "A", "code": "300502", "name": "新易盛", "role": "高速光模块"},
+      {"market": "A", "code": "300394", "name": "天孚通信", "role": "光器件"},
+      {"market": "A", "code": "688498", "name": "源杰科技", "role": "光芯片"},
+      {"market": "US", "code": "ANET", "name": "Arista Networks", "role": "数据中心交换机"}
+    ]
+  },
+  "cooling_idc_power": {
+    "label": "液冷/IDC/电力",
+    "description": "液冷、机房、电源、算力基础设施与电力配套。",
+    "stocks": [
+      {"market": "A", "code": "002837", "name": "英维克", "role": "液冷温控"},
+      {"market": "A", "code": "300442", "name": "润泽科技", "role": "IDC"},
+      {"market": "A", "code": "300274", "name": "阳光电源", "role": "电源与储能"},
+      {"market": "A", "code": "600900", "name": "长江电力", "role": "电力资产"}
+    ]
+  },
+  "cloud_models": {
+    "label": "云厂商/大模型/Agent平台",
+    "description": "云计算、大模型、AI平台、Agent与模型服务。",
+    "stocks": [
+      {"market": "HK", "code": "9988", "name": "阿里巴巴-W", "role": "云与通义模型"},
+      {"market": "HK", "code": "0700", "name": "腾讯控股", "role": "云与混元模型"},
+      {"market": "HK", "code": "9888", "name": "百度集团-SW", "role": "文心模型"},
+      {"market": "US", "code": "MSFT", "name": "微软", "role": "Azure/OpenAI生态"},
+      {"market": "US", "code": "GOOGL", "name": "Alphabet", "role": "云与Gemini"}
+    ]
+  },
+  "ai_applications": {
+    "label": "AI应用/软件",
+    "description": "办公、教育、医疗、金融、工业、内容生成等AI应用。",
+    "stocks": [
+      {"market": "A", "code": "688111", "name": "金山办公", "role": "AI办公"},
+      {"market": "A", "code": "002230", "name": "科大讯飞", "role": "AI教育/语音/模型"},
+      {"market": "A", "code": "300033", "name": "同花顺", "role": "金融AI"},
+      {"market": "US", "code": "ADBE", "name": "Adobe", "role": "生成式创意工具"},
+      {"market": "US", "code": "PLTR", "name": "Palantir", "role": "企业AI平台"}
+    ]
+  },
+  "edge_ai_robotics": {
+    "label": "端侧AI/机器人",
+    "description": "AI手机、AI PC、汽车智能化、机器人与端侧芯片。",
+    "stocks": [
+      {"market": "A", "code": "002241", "name": "歌尔股份", "role": "智能硬件"},
+      {"market": "A", "code": "002475", "name": "立讯精密", "role": "消费电子/端侧硬件"},
+      {"market": "A", "code": "300124", "name": "汇川技术", "role": "工业自动化/机器人"},
+      {"market": "US", "code": "AAPL", "name": "苹果", "role": "端侧AI生态"},
+      {"market": "US", "code": "TSLA", "name": "特斯拉", "role": "自动驾驶/机器人"}
+    ]
+  }
+}

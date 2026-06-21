@@ -1,0 +1,47 @@
+[
+  {
+    "id": "sample-001",
+    "title": "海外云厂商AI资本开支继续偏强，市场关注AI服务器和高速光模块需求",
+    "source_type": "news",
+    "source_name": "示例新闻",
+    "published_at": "2026-06-21 08:30:00",
+    "chain_segments": ["ai_servers", "optical_modules", "cooling_idc_power"],
+    "direction": "positive",
+    "weight": 4,
+    "summary": "该事件用于演示产业链传导：云厂商资本开支偏强通常先影响AI服务器，再传导到光模块、PCB、液冷、电源和IDC。",
+    "affected_stocks": ["601138", "300308", "300502", "300394", "002837"],
+    "bull_case": "若资本开支上修被后续订单或财报验证，AI服务器与高速光模块链条的收入兑现概率提升。",
+    "bear_case": "单条新闻不能证明订单已经落地，且估值可能已提前反映乐观预期。",
+    "required_confirmation": "等待云厂商正式资本开支指引、供应链订单、公司公告或财报验证。"
+  },
+  {
+    "id": "sample-002",
+    "title": "市场小作文称某光模块厂商获得新增订单",
+    "source_type": "xiaozuowen",
+    "source_name": "示例小作文",
+    "published_at": "2026-06-21 10:00:00",
+    "chain_segments": ["optical_modules"],
+    "direction": "strong_positive",
+    "weight": 5,
+    "summary": "这是一条演示用传闻，必须进入验证池，不能直接改变核心业绩假设。",
+    "affected_stocks": ["300308", "300502", "300394"],
+    "bull_case": "如果后续由公告、调研或多家研报交叉验证，可能提高订单兑现预期。",
+    "bear_case": "小作文证据权重低，容易造成情绪交易，不能单独作为核心结论。",
+    "required_confirmation": "至少需要公司公告、调研纪要或多家券商研报交叉确认。"
+  },
+  {
+    "id": "sample-003",
+    "title": "券商研报提示AI应用商业化节奏仍需观察",
+    "source_type": "broker_research",
+    "source_name": "示例券商研报",
+    "published_at": "2026-06-21 12:00:00",
+    "chain_segments": ["ai_applications", "cloud_models"],
+    "direction": "negative",
+    "weight": 3,
+    "summary": "AI应用收入兑现慢于市场预期时，短期可能压制应用软件估值弹性。",
+    "affected_stocks": ["688111", "002230", "300033"],
+    "bull_case": "商业化慢不等于长期空间消失，若产品留存、付费率改善，仍可修复预期。",
+    "bear_case": "若后续财报验证费用投入高、收入转化慢，估值中枢可能下修。",
+    "required_confirmation": "跟踪财报中AI相关收入、付费用户、毛利率和费用率。"
+  }
+]

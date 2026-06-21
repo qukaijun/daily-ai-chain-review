@@ -1,0 +1,11 @@
+project: 每日AI产业链复盘
+project_path: E:\AI工具\agent学习\每日AI产业链复盘
+threads:
+  - id: 2026-06-21-project-init
+    title: 每日AI产业链复盘项目初始化
+    status: active
+    local_record: .codex-threads/threads/2026-06-21-project-init.md
+    tags:
+      - project-init
+      - ai-chain
+      - daily-review

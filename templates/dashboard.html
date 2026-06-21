@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日AI产业链复盘 · {{GENERATED_AT}}</title>
+<style>
+:root{
+  --bg-page:#ECEFF1;
+  --bg-surface:#FCFBF7;
+  --bg-card:#FFFFFF;
+  --text-primary:#161616;
+  --text-body:#3B3B3B;
+  --text-muted:#747474;
+  --accent:#4F8A8B;
+  --accent-soft:#E3F0EF;
+  --up:#4D8F71;
+  --down:#B94B42;
+  --warn:#D47A16;
+  --line:#E5E1D8;
+  --radius:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,"Microsoft YaHei",sans-serif;background:var(--bg-page);color:var(--text-primary)}
+.page{max-width:1240px;margin:0 auto;background:var(--bg-surface);min-height:100vh}
+.hero{padding:32px 40px 24px;background:linear-gradient(135deg,#D7E3E4,#F4F1EA)}
+.eyebrow{display:inline-block;padding:4px 10px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:700}
+h1{font-size:30px;margin:12px 0 8px;letter-spacing:0}
+.hero p{max-width:820px;color:var(--text-body);line-height:1.7}
+.summary-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:18px 40px;background:var(--bg-surface);border-bottom:1px solid var(--line)}
+.summary-item{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.summary-item .label{font-size:12px;color:var(--text-muted);margin-bottom:6px}
+.summary-item .value{font-size:24px;font-weight:700}
+.content{padding:28px 40px 42px}
+.section{margin-bottom:34px}
+.section h2{font-size:20px;margin-bottom:6px}
+.section-sub{font-size:13px;color:var(--text-muted);margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.metric-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.metric-card.positive{border-left:4px solid var(--up)}
+.metric-card.negative{border-left:4px solid var(--down)}
+.metric-title{font-weight:700;margin-bottom:8px}
+.metric-value{font-size:28px;font-weight:800}
+.metric-sub{font-size:13px;color:var(--text-muted);margin:4px 0 10px}
+.metric-card p{font-size:13px;line-height:1.6;color:var(--text-body)}
+.chart-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.chart-wrap{height:340px;position:relative}
+.table-wrap{overflow:auto;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:#F3F0E9;color:var(--text-muted);text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:none}
+.tag{display:inline-block;border-radius:20px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.tag-up{background:#E3F3E8;color:var(--up)}
+.tag-down{background:#F7E6E4;color:var(--down)}
+.tag-neutral{background:#F2EFE8;color:#6D655F}
+.tag-warn{background:#FFF0D9;color:var(--warn)}
+.verification-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.verification-card{background:#FFFDF8;border:1px solid #E8D7B7;border-radius:var(--radius);padding:16px}
+.card-top{display:flex;gap:8px;align-items:center;color:var(--text-muted);font-size:12px;margin-bottom:10px}
+.verification-card h3{font-size:15px;margin-bottom:8px;line-height:1.5}
+.verification-card p{color:var(--text-body);font-size:13px;line-height:1.7}
+.verify-action{margin-top:10px;color:var(--warn);font-size:13px;line-height:1.6}
+.empty{padding:24px;background:var(--bg-card);border:1px dashed var(--line);border-radius:var(--radius);color:var(--text-muted)}
+.disclaimer{padding:14px 16px;background:#FFF4E6;border:1px solid #E8C991;border-radius:var(--radius);font-size:13px;color:#7A5B2D;line-height:1.7}
+.footer{padding:24px 40px;background:#D7E3E4;color:var(--text-muted);font-size:12px}
+@media(max-width:768px){
+  .hero,.content,.footer{padding-left:18px;padding-right:18px}
+  .summary-strip{grid-template-columns:1fr 1fr;padding:14px 18px}
+  h1{font-size:24px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <section class="hero">
+    <span class="eyebrow">AI CHAIN REVIEW</span>
+    <h1>每日AI产业链复盘</h1>
+    <p>用大盘日报工程底座生成产业链专题复盘：把新闻、券商研报、小作文、公告和产业数据结构化为事件影响，映射到AI产业链环节与具体个股，并保留证据等级和下一步验证动作。</p>
+  </section>
+
+  <section class="summary-strip">
+    <div class="summary-item"><div class="label">生成时间</div><div class="value">{{GENERATED_AT}}</div></div>
+    <div class="summary-item"><div class="label">事件数</div><div class="value">{{EVENT_COUNT}}</div></div>
+    <div class="summary-item"><div class="label">利好事件</div><div class="value" style="color:var(--up)">{{POSITIVE_COUNT}}</div></div>
+    <div class="summary-item"><div class="label">利空事件</div><div class="value" style="color:var(--down)">{{NEGATIVE_COUNT}}</div></div>
+    <div class="summary-item"><div class="label">验证池</div><div class="value" style="color:var(--warn)">{{VERIFY_COUNT}}</div></div>
+  </section>
+
+  <main class="content">
+    <section class="section">
+      <h2>今日主线</h2>
+      <div class="section-sub">{{MAINLINE}}</div>
+      <div class="disclaimer">研报、新闻和小作文可以进入复盘系统，但只有交易所文件、公司公告、财报等高等级证据才能在复核后影响核心假设。低证据事件只进入事件池或验证池。</div>
+    </section>
+
+    <section class="section">
+      <h2>产业链热力图</h2>
+      <div class="section-sub">按事件方向、权重和证据等级加权，分数为研究跟踪信号，不是交易指令。</div>
+      <div class="chart-card"><div class="chart-wrap"><canvas id="segmentChart"></canvas></div></div>
+    </section>
+
+    <section class="section">
+      <h2>产业链分层</h2>
+      <div class="section-sub">用于观察事件影响集中在哪些环节。</div>
+      <div class="grid">{{SEGMENT_CARDS}}</div>
+    </section>
+
+    <section class="section">
+      <h2>事件影响表</h2>
+      <div class="section-sub">每条事件都保留来源、证据等级、利好利空、相关个股和验证动作。</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>时间</th><th>事件</th><th>来源</th><th>方向</th><th>环节</th><th>相关个股</th><th>分数</th><th>下一步验证</th></tr></thead>
+          <tbody>{{EVENT_ROWS}}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>个股影响矩阵</h2>
+      <div class="section-sub">将事件传导到具体标的，区分利好、利空和中性。</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>市场</th><th>代码</th><th>名称</th><th>产业链环节</th><th>方向</th><th>分数</th></tr></thead>
+          <tbody>{{STOCK_ROWS}}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>小作文/低证据验证池</h2>
+      <div class="section-sub">低证据事件单独展示，不混入核心判断。</div>
+      <div class="verification-grid">{{VERIFICATION_CARDS}}</div>
+    </section>
+  </main>
+
+  <footer class="footer">每日AI产业链复盘 · 研究辅助工具 · 不构成投资建议 · Generated by local workflow</footer>
+</div>
+<script src="chartjs.min.js"></script>
+<script>
+(function(){
+  var ctx=document.getElementById("segmentChart");
+  if(!ctx || typeof Chart==="undefined") return;
+  new Chart(ctx,{
+    type:"bar",
+    data:{labels:{{SEGMENT_LABELS_JSON}},datasets:[{label:"影响分",data:{{SEGMENT_SCORES_JSON}},backgroundColor:{{SEGMENT_COLORS_JSON}},borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{grid:{color:"#EEE7DC"}},y:{grid:{display:false}}}}
+  });
+})();
+</script>
+</body>
+</html>
