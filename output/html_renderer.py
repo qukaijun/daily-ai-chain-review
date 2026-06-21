@@ -613,34 +613,92 @@ def _focus_stock_rows(stocks: list[dict[str, Any]]) -> str:
 
 def _verification_cards(events: list[dict[str, Any]]) -> str:
     if not events:
-        return '<div class="empty">暂无待验证小作文或低证据事件</div>'
-    cards = []
+        return '<div class="empty compact">暂无待验证小作文或低证据事件</div>'
+    rows = []
     for event in events:
+        score = float(event.get("score", 0))
         quality = event.get("source_quality", {})
         status = str(event.get("verification_status") or "pending")
+        auto = event.get("auto_verification", {})
+        auto_score = int(auto.get("verification_score") or 0) if isinstance(auto, dict) else 0
+        auto_label = str(auto.get("verification_label") or "待验证") if isinstance(auto, dict) else "待验证"
+        auto_note = str(auto.get("verification_note") or "") if isinstance(auto, dict) else ""
+        stocks = _compact_items(
+            [
+                f'{s.get("name", "")}({s.get("code", "")})'
+                for s in event.get("related_stocks", [])
+                if isinstance(s, dict) and (s.get("name") or s.get("code"))
+            ],
+            limit=4,
+        )
+        chain_text = _compact_items(event.get("chain_labels", []), limit=2)
+        provider = event.get("provider") or event.get("_source_file") or event.get("source_bucket") or "manual"
         source_link = _source_link(event)
         citation_note = str(event.get("citation_note") or "")
         fact_note = _fact_markers_text(event.get("fact_markers", {}))
         fact_html = f'<div class="fact-markers">{_esc(fact_note)}</div>' if fact_note else ""
         review = _review_checklist_html(event.get("review_checklist", []))
-        cards.append(
-            '<div class="verification-card">'
-            f'<div class="card-top"><span class="tag tag-warn">{_esc(quality.get("tier"))}</span>'
-            f'<span>{_esc(quality.get("label"))}</span>'
-            f'<span class="tag {_status_tag_class(status)}">{_esc(event.get("verification_status_label", status))}</span></div>'
-            f'<h3>{_esc(event.get("title"))}</h3>'
-            f'<p>{_esc(event.get("summary"))}</p>'
-            f'<div class="verify-action">验证：{_esc(event.get("required_confirmation"))}</div>'
-            f'<div class="verify-policy">{_esc(event.get("verification_policy_note", ""))}</div>'
-            f'{_manual_verification_html(event)}'
-            f'{_auto_verification_html(event)}'
-            f'{fact_html}'
-            f'{review}'
-            f'{_upgrade_evidence_note(event)}'
-            f'<div class="source-note">{source_link} {_esc(citation_note[:240])}</div>'
-            "</div>"
+        title = _clip(event.get("title"), 80)
+        summary = _clip(event.get("summary"), 115)
+        required = _clip(event.get("required_confirmation"), 120)
+        bull_case = _clip(event.get("bull_case"), 160)
+        bear_case = _clip(event.get("bear_case"), 160)
+        details = [
+            f'<p><strong>完整摘要：</strong>{_esc(_clip(event.get("summary"), 420))}</p>',
+            f'<p><strong>验证动作：</strong>{_esc(event.get("required_confirmation"))}</p>',
+        ]
+        if bull_case:
+            details.append(f'<p><strong>利好路径：</strong>{_esc(bull_case)}</p>')
+        if bear_case:
+            details.append(f'<p><strong>利空/风险：</strong>{_esc(bear_case)}</p>')
+        policy_note = str(event.get("verification_policy_note") or "").strip()
+        verification_note = str(event.get("verification_note") or "").strip()
+        if policy_note:
+            details.append(f'<p><strong>证据规则：</strong>{_esc(policy_note)}</p>')
+        if verification_note:
+            details.append(f'<p><strong>验证备注：</strong>{_esc(verification_note)}</p>')
+        if auto_note:
+            details.append(f'<p><strong>自动验证：</strong>{auto_score}/100，{_esc(auto_label)}；{_esc(auto_note)}</p>')
+        detail_extra = (
+            _manual_verification_html(event)
+            + fact_html
+            + review
+            + _upgrade_evidence_note(event)
         )
-    return "\n".join(cards)
+        if detail_extra:
+            details.append(detail_extra)
+        if source_link or citation_note:
+            details.append(f'<p><strong>来源：</strong>{source_link} {_esc(citation_note[:240])}</p>')
+        rows.append(
+            '<article class="verification-row">'
+            '<div class="verify-scorebox">'
+            f'<span class="score-value {_tag_class(score)}">{score:+.2f}</span>'
+            f'<span class="tag {_status_tag_class(status)}">{_esc(event.get("verification_status_label", status))}</span>'
+            f'<span class="verify-auto">{auto_score}/100</span>'
+            "</div>"
+            '<div class="verify-main">'
+            '<div class="verify-title-row">'
+            f'<h3>{_esc(title)}</h3>'
+            '<div class="verify-tags">'
+            f'<span class="tag tag-warn">{_esc(quality.get("tier"))}</span>'
+            f'<span class="event-source-tier">{_esc(quality.get("label"))}</span>'
+            f'<span class="tag {_tag_class(score)}">{_esc(event.get("direction_label"))}</span>'
+            "</div>"
+            "</div>"
+            f'<p class="verify-summary">{_esc(summary)}</p>'
+            '<div class="verify-meta-grid">'
+            f'<span><strong>验</strong>{_esc(required)}</span>'
+            f'<span><strong>链</strong>{_esc(chain_text)}</span>'
+            f'<span><strong>股</strong>{_esc(stocks)}</span>'
+            f'<span><strong>源</strong>{_esc(provider)}</span>'
+            "</div>"
+            '<details class="verify-details"><summary>展开候选证据与复核清单</summary>'
+            + "".join(details)
+            + "</details>"
+            "</div>"
+            "</article>"
+        )
+    return "\n".join(rows)
 
 
 def render_report(analysis: dict[str, Any], output_path: str | Path | None = None) -> str:
