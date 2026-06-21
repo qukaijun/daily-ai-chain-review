@@ -129,6 +129,7 @@ python scripts/run_daily_review.py --notify
 
 默认只预览或在未启用 `DAA_NOTIFY_ENABLED=1` 时跳过发送；企业微信/兼容 webhook 地址使用环境变量配置，不写入仓库。
 通知分为 `success/warning/failure` 三类：数据源存在 empty/failed 时为 warning，自动运行失败时从 `latest_run.json` 和日志尾部生成 failure 告警。
+通知尝试会写入 `output_files/notification_logs/`，并支持 webhook 失败重试退避。
 
 安装 Windows 交易日计划任务：
 
@@ -168,3 +169,4 @@ python scripts/check_search_config.py
 8. 已加入可选 LLM 深度多角色复盘，默认关闭，失败自动降级。
 9. 已加入日报摘要通知底座，支持本地预览和企业微信 webhook。
 10. 已加入通知异常分级和失败告警模板。
+11. 已加入通知发送记录和 webhook 重试退避。

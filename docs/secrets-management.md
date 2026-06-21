@@ -34,6 +34,8 @@ DAA_NOTIFY_ENABLED=0
 DAA_NOTIFY_PROVIDER=console
 DAA_NOTIFY_WEBHOOK_URL=...
 DAA_NOTIFY_TIMEOUT_SECONDS=15
+DAA_NOTIFY_MAX_RETRIES=2
+DAA_NOTIFY_RETRY_BACKOFF_SECONDS=2
 ```
 
 ## 检查
@@ -43,3 +45,5 @@ DAA_NOTIFY_TIMEOUT_SECONDS=15
 `scripts/check_deep_agent_config.py` 只检查深度多角色配置和降级路径，不打印完整 key；默认不会真实调用 LLM。只有显式运行 `python scripts/check_deep_agent_config.py --live` 才允许一次真实深度模型调用。
 
 `scripts/notify_daily_review.py --dry-run` 只预览通知内容，不发送 webhook；真实发送需要 `DAA_NOTIFY_ENABLED=1` 且配置 `DAA_NOTIFY_WEBHOOK_URL`。脚本不会打印完整 webhook 地址。
+
+通知发送记录位于 `output_files/notification_logs/`，只记录脱敏 webhook、状态、错误摘要和报告路径，不记录 webhook 明文。

@@ -182,6 +182,8 @@ NOTIFICATION_CONFIG = {
     "provider": _env("DAA_NOTIFY_PROVIDER", "console"),
     "webhook_url": _env("DAA_NOTIFY_WEBHOOK_URL", ""),
     "timeout_seconds": int(_env("DAA_NOTIFY_TIMEOUT_SECONDS", "15") or 15),
+    "max_retries": int(_env("DAA_NOTIFY_MAX_RETRIES", "2") or 2),
+    "retry_backoff_seconds": float(_env("DAA_NOTIFY_RETRY_BACKOFF_SECONDS", "2") or 2),
 }
 
 ENV_CONFIG = {

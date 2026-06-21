@@ -94,15 +94,32 @@ powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1 -Notify
 DAA_NOTIFY_ENABLED=1
 DAA_NOTIFY_PROVIDER=wecom
 DAA_NOTIFY_WEBHOOK_URL=https://...
+DAA_NOTIFY_MAX_RETRIES=2
+DAA_NOTIFY_RETRY_BACKOFF_SECONDS=2
 ```
 
 通知只发送紧凑摘要：事件数、验证池、主线、多角色状态、数据源状态和本地 HTML 报告路径，不发送 API key 或报告全文。
+
+通知发送记录写入：
+
+```text
+output_files/notification_logs/
+```
+
+记录包含 provider、通知级别、是否请求发送、是否启用、发送状态、尝试次数、错误摘要、报告路径和摘要字段；不保存完整 webhook 明文。
 
 通知模板分级：
 
 - `success`：日报生成和巡检通过，数据源无异常。
 - `warning`：日报生成和巡检通过，但存在 provider `empty/failed` 或其他非阻断问题。
 - `failure`：自动运行失败，从 `output_files/daily_runs/latest_run.json` 和日志尾部生成告警。
+
+发送重试规则：
+
+- 仅真实发送 webhook 时启用；
+- 默认最多重试 2 次，即最多 3 次尝试；
+- 默认退避为 2 秒、4 秒；
+- 每次最终结果都会写入通知日志。
 
 手动预览：
 
@@ -132,3 +149,4 @@ python scripts/notify_daily_review.py --dry-run --kind auto
 - 每次自动运行必须留下日志、运行摘要和可巡检产物。
 - LLM 深度多角色复盘只增强研究解释，不改变证据等级、验证状态或核心假设。
 - 通知通道只发送摘要和路径；webhook 地址属于密钥配置，不进入 GitHub。
+- 通知发送记录属于运行产物，不提交 GitHub；记录中只保留 webhook 脱敏片段。
