@@ -83,6 +83,34 @@ python main.py --fetch-market
 
 只有人工确认公告与原事件存在直接关系后，低证据事件才能从“公告候选”进一步转为“已交叉验证”。
 
+## 人工确认写回
+
+公告候选确认采用独立写回层，不覆盖原始新闻、搜索或小作文事件：
+
+```text
+data_sources/verifications/
+data_sources/_templates/verification_update.template.json
+```
+
+运行顺序：
+
+```powershell
+python scripts/validate_verifications.py
+python main.py --fetch-market
+```
+
+写回规则：
+
+- `verification_status=confirmed`：人工确认原低证据事件与公告/文件/财报直接相关；退出验证池，保留人工确认说明。
+- `verification_status=rejected`：公告或后续证据证伪原事件；退出验证池，不进入正向/负向主判断。
+- `verification_status=expired`：超过验证窗口仍无证据；退出验证池。
+- `verification_status=upgraded`：找到高等级证据候选但尚未完成核心事实核对；继续保留在验证池。
+- `model_update_candidate=true`：必须有人工确认、`confirmed/upgraded/not_required` 状态，并明确 `evidence_source_type` 为公告、交易所文件或财报；这只代表“进入核心假设复核候选”，不自动改估值模型。
+
+如果同一个 `event_id` 在多个写回文件里出现，按文件名排序后的最后一条记录生效。
+
+自动数据源生成的事件 ID 使用发布时间、标题、来源链接和公告代码生成，便于同一事件在重复运行时被人工确认文件匹配。
+
 ## 密钥加载
 
 项目读取密钥的优先级：
@@ -121,3 +149,4 @@ python scripts/check_search_config.py
 - 小作文、传闻、搜索增强事件必须保留 `verification_status` 和下一步验证动作。
 - 公告索引只能作为高等级证据候选；是否升级核心假设必须人工核对原文。
 - 公告详情摘要和事实标记只用于复核效率，不替代公告原文。
+- 人工确认写回必须保留证据标题、链接、复核结论和是否进入模型复核候选。

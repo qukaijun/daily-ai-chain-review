@@ -16,6 +16,7 @@ from config import OUTPUT_DIR
 from data.ai_event_adapter import events_from_managed_sources
 from data.event_loader import load_events
 from data.providers import DataSourceManager
+from data.verification_loader import apply_verification_updates, load_verification_updates
 from graph.event_impact_engine import analyze_events
 from output.html_renderer import render_report
 
@@ -57,10 +58,22 @@ def main() -> int:
         source_events = events_from_managed_sources(source_data)
         print(f"[Data] Source-derived AI events: {len(source_events)}")
         events.extend(source_events)
+
+    verification_updates = load_verification_updates()
+    events, verification_status = apply_verification_updates(events, verification_updates)
+    print(
+        "[Data] Verification write-backs: "
+        f"{verification_status['applied_count']}/{verification_status['update_count']} applied"
+    )
+    if verification_status["unmatched_event_ids"]:
+        preview = ", ".join(verification_status["unmatched_event_ids"][:5])
+        print(f"[WARN] Verification updates not matched in this run: {preview}")
+
     if not events:
         print("[WARN] No events found. Add JSON files to data_sources/events.")
 
     analysis = analyze_events(events)
+    analysis["verification_update_status"] = verification_status
     if args.fetch_market:
         analysis["data_source_status"] = source_data.get("source_status", [])
     save_analysis(analysis)

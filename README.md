@@ -63,10 +63,13 @@ data_sources/_templates/
 
 ```powershell
 python scripts/validate_events.py
+python scripts/validate_verifications.py
 python main.py
 ```
 
 具体规则见 `docs/data-import-guide.md`。
+
+人工确认公告候选时，复制 `data_sources/_templates/verification_update.template.json` 到 `data_sources/verifications/`。写回只覆盖验证状态和人工复核说明，不自动改原始事件或估值模型。
 
 ## 数据源管理
 

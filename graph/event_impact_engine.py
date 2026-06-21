@@ -79,6 +79,27 @@ def _verification_status(event: dict[str, Any], source_type: str, tier: str) -> 
     return {"status": raw_status, "label": labels[raw_status], "note": notes[raw_status]}
 
 
+def _manual_verification_summary(event: dict[str, Any]) -> dict[str, Any]:
+    manual = event.get("manual_verification")
+    if not isinstance(manual, dict):
+        return {}
+    evidence = manual.get("evidence", {})
+    if not isinstance(evidence, dict):
+        evidence = {}
+    return {
+        "confirmed_by": str(manual.get("confirmed_by") or ""),
+        "confirmed_at": str(manual.get("confirmed_at") or ""),
+        "decision_note": str(manual.get("decision_note") or ""),
+        "model_update_candidate": bool(manual.get("model_update_candidate") is True),
+        "evidence_event_id": str(evidence.get("event_id") or ""),
+        "evidence_source_type": str(evidence.get("source_type") or ""),
+        "evidence_title": str(evidence.get("title") or ""),
+        "evidence_url": str(evidence.get("source_url") or ""),
+        "evidence_pdf_url": str(evidence.get("pdf_url") or ""),
+        "_verification_file": str(manual.get("_verification_file") or ""),
+    }
+
+
 def _segment_lookup(stock_pool: dict[str, Any]) -> dict[str, set[str]]:
     lookup: dict[str, set[str]] = defaultdict(set)
     for segment_id, segment in stock_pool.items():
@@ -191,23 +212,40 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
         item["verification_status"] = verification["status"]
         item["verification_status_label"] = verification["label"]
         item["verification_policy_note"] = verification["note"]
+        manual_verification = _manual_verification_summary(event)
+        if manual_verification:
+            item["manual_verification"] = manual_verification
+            if manual_verification["decision_note"]:
+                item["verification_note"] = manual_verification["decision_note"]
         matched_evidence: list[dict[str, Any]] = []
         if source_type not in {"company_announcement", "exchange_filing", "financial_report"}:
             for code in affected_codes:
                 matched_evidence.extend(announcement_evidence.get(code, []))
-        if matched_evidence and item["verification_status"] == "pending":
+        if matched_evidence and item["verification_status"] == "pending" and not manual_verification:
             item["verification_status"] = "upgraded"
             item["verification_status_label"] = "已找到公告候选"
             item["verification_policy_note"] = "已命中同个股公告候选，需人工核对是否验证原事件。"
             item["verification_note"] = "已命中同个股公告候选，等待人工复核关联关系。"
         item["upgrade_evidence"] = matched_evidence[:5]
         item["model_update"] = scored["source_quality"]["tier"] == "P0"
+        item["model_update_candidate"] = bool(
+            event.get("model_update_candidate") is True
+            or (
+                manual_verification.get("model_update_candidate") is True
+                and item["verification_status"] in {"confirmed", "upgraded", "not_required"}
+                and (
+                    scored["source_quality"]["tier"] == "P0"
+                    or manual_verification.get("evidence_source_type")
+                    in {"exchange_filing", "company_announcement", "financial_report"}
+                )
+            )
+        )
         item["needs_verification"] = (
             scored["source_quality"]["tier"] in {"P2", "P3"}
             or source_type in {"rumor", "xiaozuowen", "search_api"}
-            or verification["status"] in {"pending", "upgraded"}
+            or item["verification_status"] in {"pending", "upgraded"}
         )
-        if verification["status"] in {"rejected", "expired"}:
+        if item["verification_status"] in {"confirmed", "rejected", "expired", "not_required"}:
             item["needs_verification"] = False
         if item["needs_verification"]:
             verification_pool.append(item)

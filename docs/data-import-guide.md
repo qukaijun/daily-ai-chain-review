@@ -7,6 +7,7 @@ data_sources/events/             # 新闻、产业数据、海外科技动态等
 data_sources/research_reports/   # 券商研报摘要
 data_sources/rumors/             # 小作文、传闻、待验证线索
 data_sources/announcements/      # 公司公告、交易所文件、财报摘要
+data_sources/verifications/      # 人工确认写回记录
 data_sources/_templates/         # 导入模板，不参与报告生成
 ```
 
@@ -19,6 +20,7 @@ data_sources/_templates/         # 导入模板，不参与报告生成
 
 ```powershell
 python scripts/validate_events.py
+python scripts/validate_verifications.py
 python main.py
 ```
 
@@ -52,6 +54,33 @@ python main.py
 - `required_confirmation`：下一步验证动作。
 - `verification_status`：验证状态，可选 `pending`、`confirmed`、`rejected`、`expired`、`upgraded`、`not_required`。
 - `verification_note`：验证进展说明。
+
+## 人工确认写回
+
+当低证据事件命中公告候选后，不直接改原始事件文件。复制：
+
+```text
+data_sources/_templates/verification_update.template.json
+```
+
+到：
+
+```text
+data_sources/verifications/YYYY-MM-DD-review.json
+```
+
+填写 `event_id`、`verification_status`、`decision_note` 和证据字段。
+
+写回字段：
+
+- `event_id`：被确认的原事件 ID。
+- `verification_status`：确认后的状态。
+- `confirmed_by/confirmed_at`：人工复核人和复核时间。
+- `evidence_event_id`：公告/交易所文件/财报事件 ID，可为空但建议保留。
+- `evidence_source_type`：高等级证据类型，通常为 `company_announcement`、`exchange_filing` 或 `financial_report`。
+- `evidence_title/evidence_url/evidence_pdf_url`：证据标题和原文链接。
+- `decision_note`：说明公告验证或证伪了哪个具体事实，以及金额、期间、口径是否一致。
+- `model_update_candidate`：仅当人工确认且连到高等级证据时才可为 `true`，表示进入核心假设复核候选，不代表自动改模型。
 
 ## 验证状态
 

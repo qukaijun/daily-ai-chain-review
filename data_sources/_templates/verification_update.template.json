@@ -1,0 +1,17 @@
+{
+  "updates": [
+    {
+      "event_id": "sample-002",
+      "verification_status": "confirmed",
+      "confirmed_by": "manual-reviewer",
+      "confirmed_at": "YYYY-MM-DD HH:MM:SS",
+      "evidence_event_id": "akshare_announcements-YYYYMMDD-xxxxxxxxxx",
+      "evidence_source_type": "company_announcement",
+      "evidence_title": "公告标题或交易所文件标题",
+      "evidence_url": "https://example.com/source",
+      "evidence_pdf_url": "https://example.com/source.pdf",
+      "decision_note": "说明公告原文验证了哪一个事实、金额/期间/会计口径是否一致，以及是否只提升跟踪优先级。",
+      "model_update_candidate": false
+    }
+  ]
+}

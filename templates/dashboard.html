@@ -65,6 +65,7 @@ a:hover{text-decoration:underline}
 .verify-action{margin-top:10px;color:var(--warn);font-size:13px;line-height:1.6}
 .verify-policy{margin-top:8px;color:var(--text-muted);font-size:12px;line-height:1.6}
 .upgrade-evidence{margin-top:8px;padding:8px 10px;border-radius:6px;background:#E3F0EF;color:var(--text-body);font-size:12px;line-height:1.6}
+.manual-verification{margin-top:8px;padding:8px 10px;border-radius:6px;background:#EEF4F1;color:var(--text-body);font-size:12px;line-height:1.6}
 .fact-markers{margin-top:8px;color:var(--text-body);font-size:12px;line-height:1.6}
 .review-checklist{margin:8px 0 0 18px;color:var(--text-body);font-size:12px;line-height:1.6}
 .review-checklist li{margin-bottom:3px}
@@ -111,6 +112,7 @@ a:hover{text-decoration:underline}
           <tbody>{{SOURCE_STATUS_ROWS}}</tbody>
         </table>
       </div>
+      {{VERIFICATION_UPDATE_NOTE}}
       <div class="source-note">说明：行情、新闻、搜索 API 均属于候选或事件层；只有公告、交易所文件、财报等高等级证据可在复核后影响核心假设。</div>
     </section>
 

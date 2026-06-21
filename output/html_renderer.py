@@ -48,6 +48,36 @@ def _source_link(event: dict[str, Any]) -> str:
     return f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">{label}</a>'
 
 
+def _manual_verification_html(event: dict[str, Any]) -> str:
+    manual = event.get("manual_verification")
+    if not isinstance(manual, dict):
+        return ""
+    note = str(manual.get("decision_note") or "").strip()
+    confirmed_by = str(manual.get("confirmed_by") or "").strip()
+    confirmed_at = str(manual.get("confirmed_at") or "").strip()
+    evidence_source_type = str(manual.get("evidence_source_type") or "").strip()
+    evidence_title = str(manual.get("evidence_title") or "").strip()
+    evidence_url = str(manual.get("evidence_url") or "").strip()
+    evidence_pdf_url = str(manual.get("evidence_pdf_url") or "").strip()
+    meta = " / ".join(part for part in (confirmed_by, confirmed_at) if part)
+    links = []
+    if evidence_title:
+        if evidence_url:
+            links.append(
+                f'<a href="{_esc(evidence_url)}" target="_blank" rel="noopener noreferrer">{_esc(evidence_title)}</a>'
+            )
+        else:
+            links.append(_esc(evidence_title))
+    if evidence_pdf_url:
+        links.append(f'<a href="{_esc(evidence_pdf_url)}" target="_blank" rel="noopener noreferrer">证据PDF</a>')
+    link_html = "；".join(links)
+    source_note = f"证据类型：{_esc(evidence_source_type)}" if evidence_source_type else ""
+    body = "；".join(part for part in (meta, source_note, link_html, _esc(note)) if part)
+    if not body:
+        body = "已写入人工确认记录"
+    return f'<div class="manual-verification">人工确认：{body}</div>'
+
+
 def _fact_markers_text(markers: Any) -> str:
     if not isinstance(markers, dict):
         return ""
@@ -119,7 +149,7 @@ def _events_rows(events: list[dict[str, Any]]) -> str:
             f"<td>{_esc(stocks)}</td>"
             f"<td>{score:+.2f}</td>"
             f"<td><span class=\"tag {_status_tag_class(status)}\">{_esc(status_label)}</span></td>"
-            f"<td>{_esc(event.get('required_confirmation', ''))}</td>"
+            f"<td>{_esc(event.get('required_confirmation', ''))}{_manual_verification_html(event)}</td>"
             f"<td>{_source_link(event)}</td>"
             "</tr>"
         )
@@ -153,6 +183,25 @@ def _source_status_rows(status_items: list[dict[str, Any]]) -> str:
             "</tr>"
         )
     return "\n".join(rows)
+
+
+def _verification_update_note(status: Any) -> str:
+    if not isinstance(status, dict):
+        return ""
+    update_count = int(status.get("update_count") or 0)
+    applied_count = int(status.get("applied_count") or 0)
+    unmatched = status.get("unmatched_event_ids", [])
+    if not isinstance(unmatched, list):
+        unmatched = []
+    unmatched_text = ""
+    if unmatched:
+        unmatched_text = "；未匹配：" + "、".join(_esc(item) for item in unmatched[:5])
+    return (
+        '<div class="source-note">人工确认写回：'
+        f'{applied_count}/{update_count} 已应用'
+        f'{unmatched_text}'
+        '</div>'
+    )
 
 
 def _segment_cards(segments: list[dict[str, Any]]) -> str:
@@ -210,6 +259,7 @@ def _verification_cards(events: list[dict[str, Any]]) -> str:
             f'<p>{_esc(event.get("summary"))}</p>'
             f'<div class="verify-action">验证：{_esc(event.get("required_confirmation"))}</div>'
             f'<div class="verify-policy">{_esc(event.get("verification_policy_note", ""))}</div>'
+            f'{_manual_verification_html(event)}'
             f'{fact_html}'
             f'{review}'
             f'{_upgrade_evidence_note(event)}'
@@ -236,6 +286,7 @@ def render_report(analysis: dict[str, Any], output_path: str | Path | None = Non
         "{{SEGMENT_CARDS}}": _segment_cards(analysis.get("segment_heat", [])),
         "{{EVENT_ROWS}}": _events_rows(analysis.get("events", [])),
         "{{SOURCE_STATUS_ROWS}}": _source_status_rows(analysis.get("data_source_status", [])),
+        "{{VERIFICATION_UPDATE_NOTE}}": _verification_update_note(analysis.get("verification_update_status", {})),
         "{{STOCK_ROWS}}": _stock_rows(analysis.get("stock_impact", [])),
         "{{VERIFICATION_CARDS}}": _verification_cards(analysis.get("verification_pool", [])),
         "{{SEGMENT_LABELS_JSON}}": json.dumps([s.get("label", "") for s in analysis.get("segment_heat", [])], ensure_ascii=False),

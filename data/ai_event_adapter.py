@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from datetime import datetime
 from typing import Any
 
@@ -53,9 +54,17 @@ STOCK_ALIASES = {
 }
 
 
-def _event_id(prefix: str, text: str) -> str:
+def _date_token(value: str) -> str:
+    match = re.search(r"(20\d{2})[-/.年]?\s*(\d{1,2})[-/.月]?\s*(\d{1,2})", str(value or ""))
+    if not match:
+        return datetime.now().strftime("%Y%m%d")
+    year, month, day = match.groups()
+    return f"{year}{int(month):02d}{int(day):02d}"
+
+
+def _event_id(prefix: str, text: str, published_at: str = "") -> str:
     digest = hashlib.sha1(text.encode("utf-8")).hexdigest()[:10]
-    return f"{prefix}-{datetime.now().strftime('%Y%m%d')}-{digest}"
+    return f"{prefix}-{_date_token(published_at)}-{digest}"
 
 
 def _match_segments(text: str) -> list[str]:
@@ -294,6 +303,12 @@ def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> 
     citations = _as_list(item.get("citations"))
     search_results = _as_list(item.get("search_results"))
     source_url = _first_url(item.get("url"), item.get("source_url"), citations, search_results)
+    published_at = str(item.get("time") or item.get("published_at") or retrieved_at)
+    identity_text = " ".join(
+        part
+        for part in (provider, title, source_url, str(item.get("art_code") or ""))
+        if part
+    )
     is_announcement = "announcement" in provider
     required_confirmation = str(item.get("required_confirmation") or "")
     if not required_confirmation:
@@ -303,11 +318,11 @@ def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> 
             required_confirmation = "等待公司公告、交易所文件、财报、调研纪要或多家可靠来源交叉确认。"
 
     return {
-        "id": _event_id(provider, title),
+        "id": _event_id(provider, identity_text, published_at),
         "title": title,
         "source_type": _provider_source_type(provider),
         "source_name": source_name,
-        "published_at": str(item.get("time") or item.get("published_at") or retrieved_at),
+        "published_at": published_at,
         "chain_segments": segments,
         "direction": _provider_direction(provider, item, text),
         "weight": _provider_weight(provider, bool(item.get("structured"))),
