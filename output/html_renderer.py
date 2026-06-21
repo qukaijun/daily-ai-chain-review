@@ -179,6 +179,121 @@ def _list_html(items: Any) -> str:
     return "<ul>" + "".join(f"<li>{_esc(item)}</li>" for item in items[:5]) + "</ul>"
 
 
+def _clip(value: Any, limit: int = 180) -> str:
+    text = str(value or "").strip().replace("\n", " ")
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "…"
+
+
+def _source_counts(status_items: Any) -> dict[str, int]:
+    result = {"ok": 0, "empty": 0, "failed": 0}
+    if not isinstance(status_items, list):
+        return result
+    for item in status_items:
+        if not isinstance(item, dict):
+            continue
+        status = str(item.get("status") or "")
+        if status in result:
+            result[status] += 1
+    return result
+
+
+def _provider_count(item: dict[str, Any]) -> str:
+    data = item.get("data", {})
+    if not isinstance(data, dict):
+        return ""
+    count = data.get("count", "")
+    if count == "" and isinstance(data.get("news"), dict):
+        count = data.get("news", {}).get("count", "")
+    if count == "" and isinstance(data.get("board_change"), dict):
+        count = data.get("board_change", {}).get("count", "")
+    return str(count)
+
+
+def _source_summary_chips(status_items: list[dict[str, Any]]) -> str:
+    counts = _source_counts(status_items)
+    total = sum(counts.values())
+    chips = [
+        ("可用源", counts["ok"], "tag-up"),
+        ("空源", counts["empty"], "tag-neutral"),
+        ("失败源", counts["failed"], "tag-down"),
+    ]
+    html = "".join(f'<span class="source-chip {cls}">{label} {value}</span>' for label, value, cls in chips)
+    if not total:
+        html += '<span class="source-chip tag-neutral">仅本地事件</span>'
+    return html
+
+
+def _pipeline_steps(status_items: list[dict[str, Any]], multi_agent: dict[str, Any]) -> str:
+    counts = _source_counts(status_items)
+    mode = str(multi_agent.get("mode") or "")
+    status = multi_agent.get("deep_agent_status", {})
+    deep_state = str(status.get("status") or "") if isinstance(status, dict) else ""
+    steps = [
+        ("1", "数据源融合", f"{counts['ok']} 个可用源，失败自动降级"),
+        ("2", "事件结构化", "新闻/研报/公告/传闻统一成事件"),
+        ("3", "产业链映射", "映射到环节、个股、方向和权重"),
+        ("4", "证据分层", "公告/财报高等级，传闻进验证池"),
+        ("5", "自动验证", "按个股、环节、日期聚类去重"),
+        ("6", "多角色复盘", f"{mode or 'deterministic_local'} / {deep_state or 'local'}"),
+    ]
+    return "".join(
+        '<div class="flow-step">'
+        f'<div class="flow-num">{_esc(num)}</div>'
+        f'<div class="flow-name">{_esc(name)}</div>'
+        f'<div class="flow-note">{_esc(note)}</div>'
+        "</div>"
+        for num, name, note in steps
+    )
+
+
+def _butler_conclusion(analysis: dict[str, Any], mainline: str) -> str:
+    summary = analysis.get("summary", {}) if isinstance(analysis.get("summary"), dict) else {}
+    multi_agent = analysis.get("multi_agent_analysis", {})
+    consensus = multi_agent.get("consensus", {}) if isinstance(multi_agent, dict) else {}
+    verification = analysis.get("verification_analysis", {})
+    clusters = verification.get("clusters", []) if isinstance(verification, dict) else []
+    high_clusters = sum(1 for item in clusters if isinstance(item, dict) and item.get("has_high_evidence"))
+    low_clusters = sum(1 for item in clusters if isinstance(item, dict) and item.get("has_low_evidence"))
+    source_items = analysis.get("data_source_status", [])
+    counts = _source_counts(source_items)
+    focus = consensus.get("focus", []) if isinstance(consensus, dict) else []
+    focus_items = focus if isinstance(focus, list) and focus else [
+        f"今日主线：{mainline}",
+        f"验证池数量 {summary.get('verification_count', 0)}，高等级证据簇 {high_clusters}。",
+    ]
+    quality_gate = (
+        consensus.get("quality_gate")
+        if isinstance(consensus, dict) and consensus.get("quality_gate")
+        else "研究辅助，不构成投资建议；核心假设更新必须等待高等级证据复核。"
+    )
+    stance = consensus.get("stance") if isinstance(consensus, dict) else ""
+    status = multi_agent.get("deep_agent_status", {}) if isinstance(multi_agent, dict) else {}
+    deep_state = str(status.get("status") or "not_requested") if isinstance(status, dict) else "not_requested"
+    mode = str(multi_agent.get("mode") or "deterministic_local") if isinstance(multi_agent, dict) else "deterministic_local"
+    return (
+        '<div class="butler-card">'
+        '<div class="butler-head">'
+        '<div><div class="section-kicker">管家结论</div>'
+        f'<h2>{_esc(stance or "可形成复盘主线")}</h2></div>'
+        f'<div class="butler-mainline">{_esc(mainline)}</div>'
+        '</div>'
+        '<div class="butler-grid">'
+        f'<div><span>事件</span><strong>{int(summary.get("event_count") or 0)}</strong></div>'
+        f'<div><span>利好/利空</span><strong>{int(summary.get("positive_count") or 0)}/{int(summary.get("negative_count") or 0)}</strong></div>'
+        f'<div><span>验证池</span><strong>{int(summary.get("verification_count") or 0)}</strong></div>'
+        f'<div><span>高证据簇</span><strong>{high_clusters}</strong></div>'
+        f'<div><span>可用数据源</span><strong>{counts["ok"]}</strong></div>'
+        f'<div><span>低证据簇</span><strong>{low_clusters}</strong></div>'
+        '</div>'
+        f'<div class="butler-points">{_list_html(focus_items)}</div>'
+        f'<div class="butler-tip">{_esc(quality_gate)}</div>'
+        f'<div class="micro-note">生成方：Daily AI Chain Review 本地工作流；底座：大盘日报工程结构 + TradingAgents 式多角色层；多角色模式：{_esc(mode)} / { _esc(deep_state) }。</div>'
+        '</div>'
+    )
+
+
 def _multi_agent_cards(multi_agent: dict[str, Any]) -> str:
     roles = multi_agent.get("roles", []) if isinstance(multi_agent, dict) else []
     if not isinstance(roles, list) or not roles:
@@ -214,9 +329,11 @@ def _multi_agent_cards(multi_agent: dict[str, Any]) -> str:
             f'<div class="agent-role">{_esc(role.get("role_name"))}</div>'
             f'<div class="agent-stance">{_esc(role.get("stance"))}</div>'
             f'<div class="agent-block"><strong>观察</strong>{_list_html(role.get("observations", []))}</div>'
+            '<details class="agent-more"><summary>展开依据、风险和下一步</summary>'
             f'<div class="agent-block"><strong>依据</strong>{_list_html(role.get("evidence", []))}</div>'
             f'<div class="agent-block"><strong>风险</strong>{_list_html(role.get("risks", []))}</div>'
             f'<div class="agent-block"><strong>下一步</strong>{_list_html(role.get("next_checks", []))}</div>'
+            "</details>"
             "</div>"
         )
     consensus = multi_agent.get("consensus", {}) if isinstance(multi_agent, dict) else {}
@@ -234,7 +351,7 @@ def _multi_agent_cards(multi_agent: dict[str, Any]) -> str:
 
 def _events_rows(events: list[dict[str, Any]]) -> str:
     if not events:
-        return '<tr><td colspan="11">暂无事件</td></tr>'
+        return '<tr><td colspan="8">暂无事件</td></tr>'
     rows = []
     for event in events:
         score = float(event.get("score", 0))
@@ -246,19 +363,56 @@ def _events_rows(events: list[dict[str, Any]]) -> str:
             f'{s.get("name", "")}({s.get("code", "")})'
             for s in event.get("related_stocks", [])[:8]
         )
+        details = []
+        summary = _clip(event.get("summary"), 260)
+        if summary:
+            details.append(f'<p><strong>摘要：</strong>{_esc(summary)}</p>')
+        details.append(f'<p><strong>来源：</strong>{_esc(quality.get("label", event.get("source_type", "")))} / {_esc(provider)}</p>')
+        link = _source_link(event)
+        if link:
+            details.append(f'<p><strong>链接：</strong>{link}</p>')
+        required = str(event.get("required_confirmation") or "").strip()
+        if required:
+            details.append(f'<p><strong>下一步验证：</strong>{_esc(required)}</p>')
+        extra = (
+            _manual_verification_html(event)
+            + _auto_verification_html(event)
+            + _upgrade_evidence_note(event)
+        )
+        if extra:
+            details.append(extra)
         rows.append(
             "<tr>"
             f"<td>{_esc(event.get('published_at', ''))}</td>"
-            f"<td>{_esc(event.get('title', ''))}</td>"
-            f"<td>{_esc(quality.get('label', event.get('source_type', '')))}</td>"
-            f"<td>{_esc(provider)}</td>"
+            f"<td><strong>{_esc(event.get('title', ''))}</strong><div class=\"event-summary\">{_esc(summary)}</div></td>"
             f"<td><span class=\"tag {_tag_class(score)}\">{_esc(event.get('direction_label'))}</span></td>"
             f"<td>{_esc('、'.join(event.get('chain_labels', [])))}</td>"
             f"<td>{_esc(stocks)}</td>"
             f"<td>{score:+.2f}</td>"
             f"<td><span class=\"tag {_status_tag_class(status)}\">{_esc(status_label)}</span></td>"
-            f"<td>{_esc(event.get('required_confirmation', ''))}{_manual_verification_html(event)}{_auto_verification_html(event)}</td>"
-            f"<td>{_source_link(event)}</td>"
+            '<td><details class="row-details"><summary>证据/来源</summary>'
+            + "".join(details)
+            + "</details></td>"
+            "</tr>"
+        )
+    return "\n".join(rows)
+
+
+def _front_event_rows(events: list[dict[str, Any]]) -> str:
+    if not events:
+        return '<tr><td colspan="5">暂无重点事件</td></tr>'
+    selected = sorted(events, key=lambda item: abs(float(item.get("score", 0) or 0)), reverse=True)[:6]
+    rows = []
+    for event in selected:
+        score = float(event.get("score", 0))
+        stocks = "、".join(s.get("name", "") for s in event.get("related_stocks", [])[:4])
+        rows.append(
+            "<tr>"
+            f"<td>{_esc(_clip(event.get('title'), 58))}</td>"
+            f"<td><span class=\"tag {_tag_class(score)}\">{_esc(event.get('direction_label'))}</span></td>"
+            f"<td>{_esc('、'.join(event.get('chain_labels', [])[:2]))}</td>"
+            f"<td>{_esc(stocks or '暂无')}</td>"
+            f"<td>{score:+.2f}</td>"
             "</tr>"
         )
     return "\n".join(rows)
@@ -291,6 +445,23 @@ def _source_status_rows(status_items: list[dict[str, Any]]) -> str:
             "</tr>"
         )
     return "\n".join(rows)
+
+
+def _source_status_cards(status_items: list[dict[str, Any]]) -> str:
+    if not status_items:
+        return '<div class="empty compact">未启用自动数据源；当前报告仅使用本地事件文件。</div>'
+    cards = []
+    for item in status_items:
+        status = str(item.get("status", ""))
+        tag = "tag-up" if status == "ok" else ("tag-neutral" if status == "empty" else "tag-down")
+        cards.append(
+            '<div class="source-mini">'
+            f'<span>{_esc(item.get("provider"))}</span>'
+            f'<strong class="{tag}">{_esc(status)}</strong>'
+            f'<small>{_esc(item.get("evidence_layer"))} {_esc(_provider_count(item))}</small>'
+            "</div>"
+        )
+    return "\n".join(cards)
 
 
 def _verification_update_note(status: Any) -> str:
@@ -346,6 +517,25 @@ def _stock_rows(stocks: list[dict[str, Any]]) -> str:
     return "\n".join(rows)
 
 
+def _focus_stock_rows(stocks: list[dict[str, Any]]) -> str:
+    if not stocks:
+        return '<tr><td colspan="5">暂无重点个股影响</td></tr>'
+    selected = sorted(stocks, key=lambda item: abs(float(item.get("score", 0) or 0)), reverse=True)[:10]
+    rows = []
+    for stock in selected:
+        score = float(stock.get("score", 0))
+        rows.append(
+            "<tr>"
+            f"<td>{_esc(stock.get('code'))}</td>"
+            f"<td><strong>{_esc(stock.get('name'))}</strong></td>"
+            f"<td>{_esc(stock.get('segment_label'))}</td>"
+            f"<td><span class=\"tag {_tag_class(score)}\">{_esc(stock.get('direction'))}</span></td>"
+            f"<td>{score:+.2f}</td>"
+            "</tr>"
+        )
+    return "\n".join(rows)
+
+
 def _verification_cards(events: list[dict[str, Any]]) -> str:
     if not events:
         return '<div class="empty">暂无待验证小作文或低证据事件</div>'
@@ -392,6 +582,15 @@ def render_report(analysis: dict[str, Any], output_path: str | Path | None = Non
         "{{NEGATIVE_COUNT}}": str(summary.get("negative_count", 0)),
         "{{VERIFY_COUNT}}": str(summary.get("verification_count", 0)),
         "{{MAINLINE}}": _esc(mainline),
+        "{{BUTLER_CONCLUSION}}": _butler_conclusion(analysis, mainline),
+        "{{PIPELINE_STEPS}}": _pipeline_steps(
+            analysis.get("data_source_status", []),
+            analysis.get("multi_agent_analysis", {}),
+        ),
+        "{{SOURCE_SUMMARY_CHIPS}}": _source_summary_chips(analysis.get("data_source_status", [])),
+        "{{SOURCE_STATUS_CARDS}}": _source_status_cards(analysis.get("data_source_status", [])),
+        "{{FRONT_EVENT_ROWS}}": _front_event_rows(analysis.get("events", [])),
+        "{{FOCUS_STOCK_ROWS}}": _focus_stock_rows(analysis.get("stock_impact", [])),
         "{{SEGMENT_CARDS}}": _segment_cards(analysis.get("segment_heat", [])),
         "{{EVENT_ROWS}}": _events_rows(analysis.get("events", [])),
         "{{SOURCE_STATUS_ROWS}}": _source_status_rows(analysis.get("data_source_status", [])),
