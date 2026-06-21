@@ -73,6 +73,16 @@ a:hover{text-decoration:underline}
 .empty{padding:24px;background:var(--bg-card);border:1px dashed var(--line);border-radius:var(--radius);color:var(--text-muted)}
 .disclaimer{padding:14px 16px;background:#FFF4E6;border:1px solid #E8C991;border-radius:var(--radius);font-size:13px;color:#7A5B2D;line-height:1.7}
 .source-note{font-size:12px;color:var(--text-muted);line-height:1.6;margin-top:10px}
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.agent-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.agent-card.consensus{border-left:4px solid var(--accent)}
+.agent-role{font-size:13px;color:var(--text-muted);font-weight:700;margin-bottom:6px}
+.agent-stance{font-size:16px;font-weight:800;margin-bottom:10px}
+.agent-block{margin-top:10px;color:var(--text-body);font-size:12px;line-height:1.6}
+.agent-block strong{display:block;color:var(--text-primary);font-size:12px;margin-bottom:4px}
+.agent-block ul,.agent-card ul{margin-left:18px}
+.agent-block li,.agent-card li{margin-bottom:3px}
+.agent-card p{color:var(--text-body);font-size:13px;line-height:1.7}
 .footer{padding:24px 40px;background:#D7E3E4;color:var(--text-muted);font-size:12px}
 @media(max-width:768px){
   .hero,.content,.footer{padding-left:18px;padding-right:18px}
@@ -149,6 +159,12 @@ a:hover{text-decoration:underline}
           <tbody>{{VERIFICATION_CLUSTER_ROWS}}</tbody>
         </table>
       </div>
+    </section>
+
+    <section class="section">
+      <h2>多角色复盘</h2>
+      <div class="section-sub">模拟 TradingAgents 的角色分工，从事件、公告、产业链、风险和总结五个视角生成复盘意见；不输出自动交易建议。</div>
+      <div class="agent-grid">{{MULTI_AGENT_CARDS}}</div>
     </section>
 
     <section class="section">

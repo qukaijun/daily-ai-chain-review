@@ -21,6 +21,7 @@ from config import (
     SOURCE_LABELS,
     SOURCE_WEIGHTS,
 )
+from graph.multi_agent_layer import build_multi_agent_analysis
 from graph.verification_engine import build_verification_clusters
 
 
@@ -331,7 +332,7 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
     negative_count = sum(1 for e in enriched_events if e["score"] < 0)
     top_segments = sorted(segment_heat, key=lambda x: abs(x["score"]), reverse=True)[:3]
 
-    return {
+    result = {
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "summary": {
             "event_count": len(enriched_events),
@@ -351,3 +352,5 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
         },
         "stock_pool": pool,
     }
+    result["multi_agent_analysis"] = build_multi_agent_analysis(result)
+    return result

@@ -173,6 +173,43 @@ def _verification_cluster_rows(clusters: list[dict[str, Any]]) -> str:
     return "\n".join(rows)
 
 
+def _list_html(items: Any) -> str:
+    if not isinstance(items, list) or not items:
+        return ""
+    return "<ul>" + "".join(f"<li>{_esc(item)}</li>" for item in items[:5]) + "</ul>"
+
+
+def _multi_agent_cards(multi_agent: dict[str, Any]) -> str:
+    roles = multi_agent.get("roles", []) if isinstance(multi_agent, dict) else []
+    if not isinstance(roles, list) or not roles:
+        return '<div class="empty">暂无多角色分析</div>'
+    cards = []
+    for role in roles:
+        if not isinstance(role, dict):
+            continue
+        cards.append(
+            '<div class="agent-card">'
+            f'<div class="agent-role">{_esc(role.get("role_name"))}</div>'
+            f'<div class="agent-stance">{_esc(role.get("stance"))}</div>'
+            f'<div class="agent-block"><strong>观察</strong>{_list_html(role.get("observations", []))}</div>'
+            f'<div class="agent-block"><strong>依据</strong>{_list_html(role.get("evidence", []))}</div>'
+            f'<div class="agent-block"><strong>风险</strong>{_list_html(role.get("risks", []))}</div>'
+            f'<div class="agent-block"><strong>下一步</strong>{_list_html(role.get("next_checks", []))}</div>'
+            "</div>"
+        )
+    consensus = multi_agent.get("consensus", {}) if isinstance(multi_agent, dict) else {}
+    if isinstance(consensus, dict) and consensus:
+        cards.append(
+            '<div class="agent-card consensus">'
+            '<div class="agent-role">一致结论</div>'
+            f'<div class="agent-stance">{_esc(consensus.get("stance"))}</div>'
+            f'<p>{_esc(consensus.get("quality_gate"))}</p>'
+            f'{_list_html(consensus.get("focus", []))}'
+            "</div>"
+        )
+    return "\n".join(cards)
+
+
 def _events_rows(events: list[dict[str, Any]]) -> str:
     if not events:
         return '<tr><td colspan="11">暂无事件</td></tr>'
@@ -340,6 +377,7 @@ def render_report(analysis: dict[str, Any], output_path: str | Path | None = Non
         "{{VERIFICATION_CLUSTER_ROWS}}": _verification_cluster_rows(
             analysis.get("verification_analysis", {}).get("clusters", [])
         ),
+        "{{MULTI_AGENT_CARDS}}": _multi_agent_cards(analysis.get("multi_agent_analysis", {})),
         "{{STOCK_ROWS}}": _stock_rows(analysis.get("stock_impact", [])),
         "{{VERIFICATION_CARDS}}": _verification_cards(analysis.get("verification_pool", [])),
         "{{SEGMENT_LABELS_JSON}}": json.dumps([s.get("label", "") for s in analysis.get("segment_heat", [])], ensure_ascii=False),
