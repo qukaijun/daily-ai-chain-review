@@ -222,7 +222,7 @@ def events_from_managed_sources(managed_data: dict[str, Any]) -> list[dict[str, 
         retrieved_at = source_result.get("retrieved_at", "")
         for item in _items_from_source_result(source_result):
             source_items = [item]
-            if provider == "perplexity_search" and not item.get("structured"):
+            if provider.startswith("perplexity_") and not item.get("structured"):
                 source_items = _split_unstructured_search_item(item)
             for source_item in source_items:
                 event = _event_from_item(provider, retrieved_at, source_item)
@@ -234,6 +234,10 @@ def events_from_managed_sources(managed_data: dict[str, Any]) -> list[dict[str, 
 def _provider_source_type(provider: str) -> str:
     if "announcement" in provider:
         return "company_announcement"
+    if provider == "perplexity_research":
+        return "broker_research"
+    if provider == "perplexity_rumors":
+        return "xiaozuowen"
     if "perplexity" in provider:
         return "search_api"
     return "news"
@@ -248,6 +252,10 @@ def _provider_verification_status(provider: str) -> str:
 def _provider_weight(provider: str, structured: bool) -> int:
     if "announcement" in provider:
         return 5
+    if provider == "perplexity_research":
+        return 3
+    if provider == "perplexity_rumors":
+        return 2
     if structured:
         return 3
     return 2
@@ -347,7 +355,7 @@ def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> 
         "verification_note": (
             "公告索引命中，需人工复核公告原文、金额、期间和会计确认口径。"
             if "announcement" in provider
-            else "自动数据源生成，等待人工复核。"
+            else "自动数据源生成，等待公告、财报或多来源交叉验证。"
         ),
         "announcement_type": str(item.get("announcement_type") or ""),
         "art_code": str(item.get("art_code") or ""),

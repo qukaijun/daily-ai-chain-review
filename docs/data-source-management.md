@@ -12,6 +12,8 @@
 | akshare_news | 财经新闻 | event | AkShare 新闻接口 |
 | eastmoney_flash | 东方财富快讯 | event | 直连快讯接口 |
 | perplexity_search | AI产业链结构化搜索增强 | event | 需要 `PERPLEXITY_API_KEY`，优先返回事件数组、引用链接和搜索结果 |
+| perplexity_research | 公开研报/分析师观点增强 | research_event | 自动检索公开摘要，默认映射为 `broker_research` |
+| perplexity_rumors | 市场传闻/小作文增强 | low_evidence | 自动检索传闻线索，默认映射为 `xiaozuowen` |
 | akshare_announcements | 东方财富公告大全 | audit_source | 拉取最近公告索引，命中 AI 股票池/关键词后进入公告候选 |
 
 ## Fallback 顺序
@@ -23,22 +25,32 @@ DATA_SOURCE_CONFIG = {
     "market_snapshot": ["akshare_market"],
     "news": ["eastmoney_flash", "akshare_news"],
     "search_enrichment": ["perplexity_search"],
+    "research_enrichment": ["perplexity_research"],
+    "rumor_enrichment": ["perplexity_rumors"],
     "announcement_index": ["akshare_announcements"],
 }
 ```
 
-说明：`news` 组采用 fallback，第一个可用源成功后不再尝试后续新闻源；`search_enrichment` 独立运行，所以配置 Perplexity 后会单独补充海外/产业链情报。
+说明：`news` 组采用 fallback，第一个可用源成功后不再尝试后续新闻源；`search_enrichment`、`research_enrichment`、`rumor_enrichment` 独立运行，所以配置 Perplexity 后会分别补充产业链新闻、公开研报摘要和传闻线索。
 
 ## Perplexity 结构化事件
 
-`perplexity_search` 会优先请求 JSON Schema 输出，字段包括：
+`perplexity_search`、`perplexity_research`、`perplexity_rumors` 会优先请求 JSON Schema 输出，字段包括：
 
 - `title/published_at/source_name/source_url`
 - `chain_segments/related_companies/direction`
 - `summary/bull_case/bear_case/required_confirmation`
 - `citations/search_results`
 
-如果结构化请求失败，provider 会回退为普通摘要；adapter 会尝试按段落拆分成多个事件，并保留可用引用。所有 Perplexity 事件默认属于 `search_api`，验证状态为 `pending`，不得单独改变核心假设。
+如果结构化请求失败，provider 会回退为普通摘要；adapter 会尝试按段落拆分成多个事件，并保留可用引用。
+
+映射规则：
+
+- `perplexity_search` 默认属于 `search_api`；
+- `perplexity_research` 默认属于 `broker_research`；
+- `perplexity_rumors` 默认属于 `xiaozuowen`。
+
+所有 Perplexity 自动事件验证状态默认为 `pending`，不得单独改变核心假设。
 
 ## 验证状态生命周期
 
@@ -56,6 +68,8 @@ DATA_SOURCE_CONFIG = {
 ```powershell
 python scripts/check_data_sources.py
 python scripts/check_data_sources.py perplexity_search
+python scripts/check_data_sources.py perplexity_research
+python scripts/check_data_sources.py perplexity_rumors
 python scripts/check_announcement_provider.py
 python main.py --fetch-market
 ```
@@ -147,6 +161,7 @@ python scripts/check_search_config.py
 - 只有公告、交易所文件、财报等高等级证据可在复核后影响核心假设。
 - provider 失败必须记录，不静默吞掉。
 - 小作文、传闻、搜索增强事件必须保留 `verification_status` 和下一步验证动作。
+- 自动研报和自动传闻只进入事件层/验证池，不自动改核心假设。
 - 公告索引只能作为高等级证据候选；是否升级核心假设必须人工核对原文。
 - 公告详情摘要和事实标记只用于复核效率，不替代公告原文。
 - 人工确认写回必须保留证据标题、链接、复核结论和是否进入模型复核候选。

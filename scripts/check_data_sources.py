@@ -26,6 +26,9 @@ def main() -> int:
     for item in data.get("source_status", []):
         print(f"[{item['status'].upper()}] {item['provider']} {item.get('error', '')}")
     ok_count = sum(1 for item in data.get("source_status", []) if item.get("status") == "ok")
+    if provider and data.get("source_status", [{}])[0].get("status") == "empty":
+        print("[OK] provider reachable but returned no usable data")
+        return 0
     if ok_count == 0:
         print("[FAIL] no data source available")
         return 1

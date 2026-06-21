@@ -146,6 +146,8 @@ DATA_SOURCE_CONFIG = {
     "market_snapshot": ["akshare_market"],
     "news": ["eastmoney_flash", "akshare_news"],
     "search_enrichment": ["perplexity_search"],
+    "research_enrichment": ["perplexity_research"],
+    "rumor_enrichment": ["perplexity_rumors"],
     "announcement_index": ["akshare_announcements"],
 }
 

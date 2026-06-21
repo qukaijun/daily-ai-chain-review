@@ -113,6 +113,8 @@ class DataSourceManager:
             "akshare_news": self._akshare_news,
             "eastmoney_flash": self._eastmoney_flash,
             "perplexity_search": self._perplexity_search,
+            "perplexity_research": self._perplexity_research,
+            "perplexity_rumors": self._perplexity_rumors,
             "akshare_announcements": self._akshare_announcements,
         }
         self.status_log: list[dict[str, Any]] = []
@@ -156,18 +158,23 @@ class DataSourceManager:
             ok = bool(data) and not (isinstance(data, dict) and data.get("error"))
             status = "ok" if ok else "empty"
             error = data.get("error", "") if isinstance(data, dict) else ""
-            evidence_layer = (
-                "audit_source"
-                if provider in {"akshare_announcements"}
-                else "event"
-                if provider in {"eastmoney_flash", "akshare_news", "perplexity_search"}
-                else "candidate"
-            )
+            evidence_layer = self._evidence_layer(provider)
             result = self._result(provider, status, data, error=error, evidence_layer=evidence_layer)
         except Exception as exc:
             result = self._result(provider, "failed", {}, error=str(exc)[:200])
         self.status_log.append(result.to_dict())
         return result
+
+    def _evidence_layer(self, provider: str) -> str:
+        if provider == "akshare_announcements":
+            return "audit_source"
+        if provider == "perplexity_research":
+            return "research_event"
+        if provider == "perplexity_rumors":
+            return "low_evidence"
+        if provider in {"eastmoney_flash", "akshare_news", "perplexity_search"}:
+            return "event"
+        return "candidate"
 
     def _result(
         self,
@@ -509,7 +516,7 @@ class DataSourceManager:
             timeout=45,
         )
 
-    def _perplexity_search(self) -> dict[str, Any]:
+    def _perplexity_events(self, *, provider_label: str, system_prompt: str, user_prompt: str) -> dict[str, Any]:
         api_key = SEARCH_CONFIG.get("perplexity_api_key", "")
         if not api_key:
             return {"count": 0, "items": [], "error": "PERPLEXITY_API_KEY not configured"}
@@ -518,20 +525,11 @@ class DataSourceManager:
             "messages": [
                 {
                     "role": "system",
-                    "content": (
-                        "Return structured AI industry-chain event candidates with citations. "
-                        "Focus on facts, source dates, source URLs, affected segments, related companies, "
-                        "and what still needs verification. Do not provide trading advice."
-                    ),
+                    "content": system_prompt,
                 },
                 {
                     "role": "user",
-                    "content": (
-                        "请检索最近24小时全球和中国AI产业链重要变化，覆盖算力、GPU/HBM、"
-                        "AI服务器、光模块、液冷、数据中心、大模型、AI应用、机器人。"
-                        "请返回 JSON 对象，字段为 events 数组；每条必须说明来源、时间、"
-                        "source_url、影响环节、可能相关公司、利好/利空方向、正反影响和需要验证的证据。"
-                    ),
+                    "content": user_prompt,
                 },
             ],
             "response_format": {
@@ -578,7 +576,7 @@ class DataSourceManager:
             "count": 1,
             "items": [
                 {
-                    "title": "Perplexity AI产业链检索摘要",
+                    "title": f"{provider_label}检索摘要",
                     "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "source": "Perplexity Sonar",
                     "content": content,
@@ -594,3 +592,52 @@ class DataSourceManager:
             "used_structured_request": used_structured_request,
             "parse_error": parse_error,
         }
+
+    def _perplexity_search(self) -> dict[str, Any]:
+        return self._perplexity_events(
+            provider_label="Perplexity AI产业链",
+            system_prompt=(
+                "Return structured AI industry-chain event candidates with citations. "
+                "Focus on facts, source dates, source URLs, affected segments, related companies, "
+                "and what still needs verification. Do not provide trading advice."
+            ),
+            user_prompt=(
+                "请检索最近24小时全球和中国AI产业链重要变化，覆盖算力、GPU/HBM、"
+                "AI服务器、光模块、液冷、数据中心、大模型、AI应用、机器人。"
+                "请返回 JSON 对象，字段为 events 数组；每条必须说明来源、时间、"
+                "source_url、影响环节、可能相关公司、利好/利空方向、正反影响和需要验证的证据。"
+            ),
+        )
+
+    def _perplexity_research(self) -> dict[str, Any]:
+        return self._perplexity_events(
+            provider_label="Perplexity 研报线索",
+            system_prompt=(
+                "Return structured broker research and analyst-note candidates about the AI industry chain. "
+                "Keep summaries brief, cite public source pages, preserve broker/source names when available, "
+                "and avoid quoting long copyrighted report text. Do not provide trading advice."
+            ),
+            user_prompt=(
+                "请检索最近3天公开可查的AI产业链券商研报、分析师观点或机构研究摘要，"
+                "覆盖算力芯片、AI服务器、光模块、液冷/IDC、大模型、AI应用和机器人。"
+                "只返回公开摘要层面的信息，不要复述研报全文。请用 JSON 对象返回 events 数组；"
+                "每条说明研报/机构来源、发布时间、source_url、核心观点、影响环节、相关公司、"
+                "利好/利空方向、正反影响，以及仍需用公告/财报/订单验证的事项。"
+            ),
+        )
+
+    def _perplexity_rumors(self) -> dict[str, Any]:
+        return self._perplexity_events(
+            provider_label="Perplexity 传闻线索",
+            system_prompt=(
+                "Return structured market rumor or social-discussion candidates about the AI industry chain. "
+                "Treat all items as unverified low-evidence leads, include citations when available, "
+                "and clearly state what official evidence is required. Do not provide trading advice."
+            ),
+            user_prompt=(
+                "请检索最近24小时AI产业链市场传闻、社媒讨论、小作文式线索和需要验证的市场说法，"
+                "覆盖算力、AI服务器、光模块、液冷、数据中心、大模型、AI应用、机器人。"
+                "请用 JSON 对象返回 events 数组；每条必须标明来源、时间、source_url、相关公司、"
+                "影响环节、方向、为什么可能利好/利空，以及需要公告、交易所文件、财报或多来源验证的证据。"
+            ),
+        )
