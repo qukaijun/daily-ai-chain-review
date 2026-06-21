@@ -34,11 +34,12 @@ def _tag_class(score: float) -> str:
 
 def _events_rows(events: list[dict[str, Any]]) -> str:
     if not events:
-        return '<tr><td colspan="8">暂无事件</td></tr>'
+        return '<tr><td colspan="9">暂无事件</td></tr>'
     rows = []
     for event in events:
         score = float(event.get("score", 0))
         quality = event.get("source_quality", {})
+        provider = event.get("provider") or event.get("_source_file") or event.get("source_bucket") or "manual"
         stocks = "、".join(
             f'{s.get("name", "")}({s.get("code", "")})'
             for s in event.get("related_stocks", [])[:8]
@@ -48,11 +49,41 @@ def _events_rows(events: list[dict[str, Any]]) -> str:
             f"<td>{_esc(event.get('published_at', ''))}</td>"
             f"<td>{_esc(event.get('title', ''))}</td>"
             f"<td>{_esc(quality.get('label', event.get('source_type', '')))}</td>"
+            f"<td>{_esc(provider)}</td>"
             f"<td><span class=\"tag {_tag_class(score)}\">{_esc(event.get('direction_label'))}</span></td>"
             f"<td>{_esc('、'.join(event.get('chain_labels', [])))}</td>"
             f"<td>{_esc(stocks)}</td>"
             f"<td>{score:+.2f}</td>"
             f"<td>{_esc(event.get('required_confirmation', ''))}</td>"
+            "</tr>"
+        )
+    return "\n".join(rows)
+
+
+def _source_status_rows(status_items: list[dict[str, Any]]) -> str:
+    if not status_items:
+        return '<tr><td colspan="6">未启用自动数据源；当前报告仅使用本地事件文件。</td></tr>'
+    rows = []
+    for item in status_items:
+        status = str(item.get("status", ""))
+        tag = "tag-up" if status == "ok" else ("tag-neutral" if status == "empty" else "tag-down")
+        data = item.get("data", {})
+        if isinstance(data, dict):
+            count = data.get("count", "")
+            if count == "" and isinstance(data.get("news"), dict):
+                count = data.get("news", {}).get("count", "")
+            if count == "" and isinstance(data.get("board_change"), dict):
+                count = data.get("board_change", {}).get("count", "")
+        else:
+            count = ""
+        rows.append(
+            "<tr>"
+            f"<td>{_esc(item.get('provider'))}</td>"
+            f"<td><span class=\"tag {tag}\">{_esc(status)}</span></td>"
+            f"<td>{_esc(item.get('evidence_layer'))}</td>"
+            f"<td>{_esc(item.get('retrieved_at'))}</td>"
+            f"<td>{_esc(count)}</td>"
+            f"<td>{_esc(item.get('error'))}</td>"
             "</tr>"
         )
     return "\n".join(rows)
@@ -126,6 +157,7 @@ def render_report(analysis: dict[str, Any], output_path: str | Path | None = Non
         "{{MAINLINE}}": _esc(mainline),
         "{{SEGMENT_CARDS}}": _segment_cards(analysis.get("segment_heat", [])),
         "{{EVENT_ROWS}}": _events_rows(analysis.get("events", [])),
+        "{{SOURCE_STATUS_ROWS}}": _source_status_rows(analysis.get("data_source_status", [])),
         "{{STOCK_ROWS}}": _stock_rows(analysis.get("stock_impact", [])),
         "{{VERIFICATION_CARDS}}": _verification_cards(analysis.get("verification_pool", [])),
         "{{SEGMENT_LABELS_JSON}}": json.dumps([s.get("label", "") for s in analysis.get("segment_heat", [])], ensure_ascii=False),

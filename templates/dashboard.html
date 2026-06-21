@@ -63,6 +63,7 @@ tr:last-child td{border-bottom:none}
 .verify-action{margin-top:10px;color:var(--warn);font-size:13px;line-height:1.6}
 .empty{padding:24px;background:var(--bg-card);border:1px dashed var(--line);border-radius:var(--radius);color:var(--text-muted)}
 .disclaimer{padding:14px 16px;background:#FFF4E6;border:1px solid #E8C991;border-radius:var(--radius);font-size:13px;color:#7A5B2D;line-height:1.7}
+.source-note{font-size:12px;color:var(--text-muted);line-height:1.6;margin-top:10px}
 .footer{padding:24px 40px;background:#D7E3E4;color:var(--text-muted);font-size:12px}
 @media(max-width:768px){
   .hero,.content,.footer{padding-left:18px;padding-right:18px}
@@ -95,6 +96,18 @@ tr:last-child td{border-bottom:none}
     </section>
 
     <section class="section">
+      <h2>数据源状态</h2>
+      <div class="section-sub">显示本次报告自动数据源的可用状态；失败会保留错误信息，方便切换 provider。</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Provider</th><th>状态</th><th>证据层级</th><th>获取时间</th><th>数量</th><th>错误</th></tr></thead>
+          <tbody>{{SOURCE_STATUS_ROWS}}</tbody>
+        </table>
+      </div>
+      <div class="source-note">说明：行情、新闻、搜索 API 均属于候选或事件层；只有公告、交易所文件、财报等高等级证据可在复核后影响核心假设。</div>
+    </section>
+
+    <section class="section">
       <h2>产业链热力图</h2>
       <div class="section-sub">按事件方向、权重和证据等级加权，分数为研究跟踪信号，不是交易指令。</div>
       <div class="chart-card"><div class="chart-wrap"><canvas id="segmentChart"></canvas></div></div>
@@ -111,7 +124,7 @@ tr:last-child td{border-bottom:none}
       <div class="section-sub">每条事件都保留来源、证据等级、利好利空、相关个股和验证动作。</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>时间</th><th>事件</th><th>来源</th><th>方向</th><th>环节</th><th>相关个股</th><th>分数</th><th>下一步验证</th></tr></thead>
+          <thead><tr><th>时间</th><th>事件</th><th>来源</th><th>Provider/文件</th><th>方向</th><th>环节</th><th>相关个股</th><th>分数</th><th>下一步验证</th></tr></thead>
           <tbody>{{EVENT_ROWS}}</tbody>
         </table>
       </div>

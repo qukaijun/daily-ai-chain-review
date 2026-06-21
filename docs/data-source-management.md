@@ -31,6 +31,18 @@ python scripts/check_data_sources.py
 python main.py --fetch-market
 ```
 
+## 页面展示
+
+运行 `python main.py --fetch-market` 后，HTML 会展示：
+
+- Provider 名称；
+- 状态：`ok`、`empty`、`failed`；
+- 证据层级；
+- 获取时间；
+- 数量；
+- 错误信息；
+- 每条事件的 Provider 或本地文件来源。
+
 ## 治理规则
 
 - 所有 provider 输出必须保留 `provider/status/retrieved_at/error/evidence_layer`。
