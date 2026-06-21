@@ -80,6 +80,7 @@ def main() -> int:
     parser.add_argument("--skip-preflight", action="store_true", help="Skip input and project health checks")
     parser.add_argument("--skip-postflight", action="store_true", help="Skip latest report QA")
     parser.add_argument("--deep-agents", action="store_true", help="Enable optional LLM deep multi-agent review")
+    parser.add_argument("--notify", action="store_true", help="Send configured notification after successful QA")
     parser.add_argument("--max-age-hours", type=float, default=36, help="Max report age accepted by postflight QA")
     args = parser.parse_args()
 
@@ -120,6 +121,11 @@ def main() -> int:
         if not args.no_fetch_market:
             postflight_cmd.append("--require-market-sources")
         commands.append(postflight_cmd)
+        if args.notify:
+            notify_cmd = [sys.executable, "scripts/notify_daily_review.py", "--send"]
+            if not args.no_fetch_market:
+                notify_cmd.append("--require-market-sources")
+            commands.append(notify_cmd)
 
     print("=" * 60)
     print("  Daily AI Chain Review Runner")
@@ -142,6 +148,7 @@ def main() -> int:
         "started_at": run_id,
         "finished_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "log_file": str(log_file),
+        "notification_requested": bool(args.notify),
         "commands": results,
     }
     _write_summary(summary_path, payload)

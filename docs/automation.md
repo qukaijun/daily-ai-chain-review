@@ -80,6 +80,24 @@ powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1 -DeepAge
 
 如果未配置 `DAA_LLM_API_KEY`，系统会自动降级为本地确定性多角色层。日常健康检查不会真实调用 LLM；只有 `python scripts/check_deep_agent_config.py --live` 会测试真实模型调用。
 
+启用日报摘要通知：
+
+```powershell
+python scripts/notify_daily_review.py --dry-run
+python scripts/run_daily_review.py --notify
+powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1 -Notify
+```
+
+默认 `DAA_NOTIFY_ENABLED=0`，即使传入 `--notify` 也只会在日志中提示未启用发送。配置企业微信机器人或兼容 webhook：
+
+```text
+DAA_NOTIFY_ENABLED=1
+DAA_NOTIFY_PROVIDER=wecom
+DAA_NOTIFY_WEBHOOK_URL=https://...
+```
+
+通知只发送紧凑摘要：事件数、验证池、主线、多角色状态、数据源状态和本地 HTML 报告路径，不发送 API key 或报告全文。
+
 ## Codex 定时器
 
 推荐把 Codex 定时器作为通知和异常诊断层：
@@ -89,6 +107,7 @@ powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1 -DeepAge
 - 失败时先读取 `output_files/daily_runs/latest_run.json` 和日志定位问题；
 - 不打印 API key，不提交 `output_files/` 运行产物。
 - 默认不启用 LLM 深度复盘；如需启用，在自动化 prompt 或脚本参数中显式加入 `--deep-agents`。
+- 默认不启用 webhook 通知；如需外部推送，在脚本参数中显式加入 `--notify` 并配置环境变量。
 
 ## 治理规则
 
@@ -97,3 +116,4 @@ powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1 -DeepAge
 - 只有公告、交易所文件、财报等高等级证据在人工复核后才可进入核心假设复核。
 - 每次自动运行必须留下日志、运行摘要和可巡检产物。
 - LLM 深度多角色复盘只增强研究解释，不改变证据等级、验证状态或核心假设。
+- 通知通道只发送摘要和路径；webhook 地址属于密钥配置，不进入 GitHub。

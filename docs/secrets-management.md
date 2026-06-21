@@ -29,6 +29,11 @@ DAA_DEEP_MODEL=gpt-4o
 DAA_ENABLE_DEEP_AGENTS=0
 DAA_LLM_TIMEOUT_SECONDS=45
 DAA_LLM_MAX_TOKENS=2200
+
+DAA_NOTIFY_ENABLED=0
+DAA_NOTIFY_PROVIDER=console
+DAA_NOTIFY_WEBHOOK_URL=...
+DAA_NOTIFY_TIMEOUT_SECONDS=15
 ```
 
 ## 检查
@@ -36,3 +41,5 @@ DAA_LLM_MAX_TOKENS=2200
 `scripts/check_search_config.py` 只显示 key 是否存在、长度和脱敏片段，不打印完整 key。
 
 `scripts/check_deep_agent_config.py` 只检查深度多角色配置和降级路径，不打印完整 key；默认不会真实调用 LLM。只有显式运行 `python scripts/check_deep_agent_config.py --live` 才允许一次真实深度模型调用。
+
+`scripts/notify_daily_review.py --dry-run` 只预览通知内容，不发送 webhook；真实发送需要 `DAA_NOTIFY_ENABLED=1` 且配置 `DAA_NOTIFY_WEBHOOK_URL`。脚本不会打印完整 webhook 地址。

@@ -211,3 +211,16 @@ python scripts/run_daily_review.py --deep-agents
 ```
 
 深度版通过 OpenAI-compatible Chat Completions 接口读取已结构化的分析摘要，只输出五类角色卡片和一致结论，不改写事件、验证状态、证据等级或估值模型。若未配置 `DAA_LLM_API_KEY` 或调用失败，会自动降级为本地确定性层，并在 HTML 的“多角色模式”卡片中显示状态。
+
+## 日报摘要通知
+
+`scripts/notify_daily_review.py` 会读取最新完整日报产物，生成紧凑摘要：
+
+- 事件数、利好/利空、验证池数量；
+- 今日主线；
+- 多角色模式；
+- 数据源 ok/empty/failed 状态；
+- 本地 HTML 报告路径；
+- 研究辅助和证据复核边界。
+
+默认 provider 为 `console`，用于本地预览。配置 `DAA_NOTIFY_PROVIDER=wecom` 和 `DAA_NOTIFY_WEBHOOK_URL` 后，可通过 `python scripts/run_daily_review.py --notify` 在日报生成和巡检通过后推送摘要。

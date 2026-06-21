@@ -34,6 +34,7 @@ python main.py --fetch-market
 python main.py --fetch-market --deep-agents
 python scripts/health_check.py
 python scripts/run_daily_review.py
+python scripts/notify_daily_review.py --dry-run
 ```
 
 输出文件在：
@@ -118,6 +119,15 @@ python scripts/run_daily_review.py --deep-agents
 
 未配置 `DAA_LLM_API_KEY` 时会自动降级为本地确定性多角色层。
 
+如需日报摘要通知：
+
+```powershell
+python scripts/notify_daily_review.py --dry-run
+python scripts/run_daily_review.py --notify
+```
+
+默认只预览或在未启用 `DAA_NOTIFY_ENABLED=1` 时跳过发送；企业微信/兼容 webhook 地址使用环境变量配置，不写入仓库。
+
 安装 Windows 交易日计划任务：
 
 ```powershell
@@ -154,3 +164,4 @@ python scripts/check_search_config.py
 6. 已加入本地确定性的 TradingAgents 式多角色分析，并可显式启用 LLM 深度版。
 7. 已加入每日自动生成脚本、最新产物巡检和 Windows 计划任务安装脚本。
 8. 已加入可选 LLM 深度多角色复盘，默认关闭，失败自动降级。
+9. 已加入日报摘要通知底座，支持本地预览和企业微信 webhook。

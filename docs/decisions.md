@@ -24,3 +24,4 @@
 - TradingAgents 式多角色层先采用本地确定性规则实现，确保无 LLM key 时也能稳定生成；角色输出只提供研究观察、依据、风险和下一步验证，不输出自动交易建议。
 - 每日自动化先落在仓库内脚本：`run_daily_review.py` 负责生成、日志和自检，`check_latest_run.py` 负责产物巡检，`install_daily_task.ps1` 负责 Windows 交易日定时；Codex 定时器作为通知/异常诊断层，不替代项目自身脚本。
 - LLM 深度多角色复盘采用显式开启策略：默认不调用模型，`--deep-agents` 或 `DAA_ENABLE_DEEP_AGENTS=1` 才启用；无 key 或调用失败时降级为本地确定性层，且不改变证据等级、验证状态、核心假设或投资结论边界。
+- 外部通知通道采用显式开启策略：默认仅 console 预览，`--notify` 加 `DAA_NOTIFY_ENABLED=1` 才发送；首版支持企业微信 webhook，通知只发紧凑摘要和本地报告路径，不发送报告全文、API key 或 webhook 明文。

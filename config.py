@@ -177,6 +177,13 @@ SEARCH_CONFIG = {
     "perplexity_model": _env("PERPLEXITY_MODEL", "sonar"),
 }
 
+NOTIFICATION_CONFIG = {
+    "enabled": _env("DAA_NOTIFY_ENABLED", "0") == "1",
+    "provider": _env("DAA_NOTIFY_PROVIDER", "console"),
+    "webhook_url": _env("DAA_NOTIFY_WEBHOOK_URL", ""),
+    "timeout_seconds": int(_env("DAA_NOTIFY_TIMEOUT_SECONDS", "15") or 15),
+}
+
 ENV_CONFIG = {
     "global_env_path": str(_GLOBAL_ENV_PATH),
     "loaded_env_files": list(_LOADED_ENV_FILES),
