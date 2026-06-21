@@ -21,6 +21,7 @@ from config import (
     SOURCE_LABELS,
     SOURCE_WEIGHTS,
 )
+from graph.verification_engine import build_verification_clusters
 
 
 def load_stock_pool(path: Path | None = None) -> dict[str, Any]:
@@ -170,11 +171,40 @@ def _score_event(event: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _merge_high_evidence_signal(signal: dict[str, Any], evidence_count: int) -> dict[str, Any]:
+    merged = dict(signal) if isinstance(signal, dict) else {}
+    merged["verification_score"] = max(int(merged.get("verification_score") or 0), 55)
+    merged["verification_label"] = "公告/高等级证据候选"
+    merged["verification_note"] = "已命中同个股公告、交易所文件或财报候选，需人工核对是否验证原事件。"
+    merged["has_high_evidence"] = True
+    merged["cluster_size"] = max(int(merged.get("cluster_size") or 1), evidence_count + 1)
+    return merged
+
+
+def _upgrade_cluster_for_high_evidence(verification_analysis: dict[str, Any], signal: dict[str, Any]) -> None:
+    cluster_id = str(signal.get("cluster_id") or "")
+    if not cluster_id:
+        return
+    clusters = verification_analysis.get("clusters", [])
+    if not isinstance(clusters, list):
+        return
+    for cluster in clusters:
+        if not isinstance(cluster, dict) or cluster.get("cluster_id") != cluster_id:
+            continue
+        cluster["verification_score"] = max(int(cluster.get("verification_score") or 0), 55)
+        cluster["verification_label"] = "公告/高等级证据候选"
+        cluster["verification_note"] = "已命中同个股公告、交易所文件或财报候选，需人工核对是否验证原事件。"
+        cluster["has_high_evidence"] = True
+        break
+
+
 def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | None = None) -> dict[str, Any]:
     pool = stock_pool or load_stock_pool()
     stock_lookup = _stock_lookup(pool)
     stock_segments = _segment_lookup(pool)
     announcement_evidence = _build_announcement_evidence(events)
+    verification_analysis = build_verification_clusters(events)
+    verification_signals = verification_analysis.get("event_signals", {})
 
     enriched_events: list[dict[str, Any]] = []
     segment_scores: dict[str, float] = defaultdict(float)
@@ -212,6 +242,9 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
         item["verification_status"] = verification["status"]
         item["verification_status_label"] = verification["label"]
         item["verification_policy_note"] = verification["note"]
+        auto_signal = verification_signals.get(str(event.get("id") or ""), {})
+        if isinstance(auto_signal, dict) and auto_signal:
+            item["auto_verification"] = auto_signal
         manual_verification = _manual_verification_summary(event)
         if manual_verification:
             item["manual_verification"] = manual_verification
@@ -226,6 +259,19 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
             item["verification_status_label"] = "已找到公告候选"
             item["verification_policy_note"] = "已命中同个股公告候选，需人工核对是否验证原事件。"
             item["verification_note"] = "已命中同个股公告候选，等待人工复核关联关系。"
+            item["auto_verification"] = _merge_high_evidence_signal(
+                item.get("auto_verification", {}),
+                len(matched_evidence),
+            )
+            _upgrade_cluster_for_high_evidence(verification_analysis, item["auto_verification"])
+        elif (
+            auto_signal
+            and item["verification_status"] == "pending"
+            and auto_signal.get("verification_label") == "多来源共振"
+            and not manual_verification
+        ):
+            item["verification_status_label"] = "多来源待核验"
+            item["verification_policy_note"] = "多来源提到同一股票/主题，需继续核对公告、财报或订单。"
         item["upgrade_evidence"] = matched_evidence[:5]
         item["model_update"] = scored["source_quality"]["tier"] == "P0"
         item["model_update_candidate"] = bool(
@@ -298,5 +344,10 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
         "segment_heat": sorted(segment_heat, key=lambda x: abs(x["score"]), reverse=True),
         "stock_impact": sorted(stock_impact, key=lambda x: abs(x["score"]), reverse=True),
         "verification_pool": verification_pool,
+        "verification_analysis": {
+            key: value
+            for key, value in verification_analysis.items()
+            if key not in {"event_signals", "event_cluster_index"}
+        },
         "stock_pool": pool,
     }

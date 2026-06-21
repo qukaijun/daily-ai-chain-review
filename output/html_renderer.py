@@ -124,6 +124,55 @@ def _upgrade_evidence_note(event: dict[str, Any]) -> str:
     return '<div class="upgrade-evidence">公告候选：' + "；".join(links) + "".join(checklist) + "</div>"
 
 
+def _auto_verification_html(event: dict[str, Any]) -> str:
+    signal = event.get("auto_verification")
+    if not isinstance(signal, dict) or not signal:
+        return ""
+    duplicate = str(signal.get("duplicate_of") or "").strip()
+    duplicate_note = f"；疑似重复于 {duplicate}" if duplicate else ""
+    return (
+        '<div class="auto-verification">'
+        f'自动验证：{_esc(signal.get("verification_label", ""))} '
+        f'({int(signal.get("verification_score") or 0)}/100，'
+        f'{int(signal.get("cluster_size") or 1)} 条相关事件)'
+        f'{_esc(duplicate_note)}'
+        f'<br>{_esc(signal.get("verification_note", ""))}'
+        '</div>'
+    )
+
+
+def _verification_cluster_rows(clusters: list[dict[str, Any]]) -> str:
+    if not clusters:
+        return '<tr><td colspan="8">暂无自动验证簇</td></tr>'
+    rows = []
+    for cluster in clusters[:20]:
+        score = int(cluster.get("verification_score") or 0)
+        tag_class = "tag-up" if score >= 70 else "tag-warn" if score >= 35 else "tag-neutral"
+        links = []
+        for event in cluster.get("events", [])[:3]:
+            if not isinstance(event, dict):
+                continue
+            title = str(event.get("title") or "事件")
+            url = str(event.get("pdf_url") or event.get("source_url") or "").strip()
+            if url:
+                links.append(f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">{_esc(title)}</a>')
+            else:
+                links.append(_esc(title))
+        rows.append(
+            "<tr>"
+            f"<td><span class=\"tag {tag_class}\">{score}/100</span></td>"
+            f"<td>{_esc(cluster.get('verification_label'))}</td>"
+            f"<td>{_esc(cluster.get('event_count'))}</td>"
+            f"<td>{_esc('、'.join(cluster.get('stock_codes', [])[:8]))}</td>"
+            f"<td>{_esc('、'.join(cluster.get('source_types', [])[:6]))}</td>"
+            f"<td>{_esc('、'.join(cluster.get('providers', [])[:6]))}</td>"
+            f"<td>{'；'.join(links)}</td>"
+            f"<td>{_esc(cluster.get('verification_note'))}</td>"
+            "</tr>"
+        )
+    return "\n".join(rows)
+
+
 def _events_rows(events: list[dict[str, Any]]) -> str:
     if not events:
         return '<tr><td colspan="11">暂无事件</td></tr>'
@@ -149,7 +198,7 @@ def _events_rows(events: list[dict[str, Any]]) -> str:
             f"<td>{_esc(stocks)}</td>"
             f"<td>{score:+.2f}</td>"
             f"<td><span class=\"tag {_status_tag_class(status)}\">{_esc(status_label)}</span></td>"
-            f"<td>{_esc(event.get('required_confirmation', ''))}{_manual_verification_html(event)}</td>"
+            f"<td>{_esc(event.get('required_confirmation', ''))}{_manual_verification_html(event)}{_auto_verification_html(event)}</td>"
             f"<td>{_source_link(event)}</td>"
             "</tr>"
         )
@@ -260,6 +309,7 @@ def _verification_cards(events: list[dict[str, Any]]) -> str:
             f'<div class="verify-action">验证：{_esc(event.get("required_confirmation"))}</div>'
             f'<div class="verify-policy">{_esc(event.get("verification_policy_note", ""))}</div>'
             f'{_manual_verification_html(event)}'
+            f'{_auto_verification_html(event)}'
             f'{fact_html}'
             f'{review}'
             f'{_upgrade_evidence_note(event)}'
@@ -287,6 +337,9 @@ def render_report(analysis: dict[str, Any], output_path: str | Path | None = Non
         "{{EVENT_ROWS}}": _events_rows(analysis.get("events", [])),
         "{{SOURCE_STATUS_ROWS}}": _source_status_rows(analysis.get("data_source_status", [])),
         "{{VERIFICATION_UPDATE_NOTE}}": _verification_update_note(analysis.get("verification_update_status", {})),
+        "{{VERIFICATION_CLUSTER_ROWS}}": _verification_cluster_rows(
+            analysis.get("verification_analysis", {}).get("clusters", [])
+        ),
         "{{STOCK_ROWS}}": _stock_rows(analysis.get("stock_impact", [])),
         "{{VERIFICATION_CARDS}}": _verification_cards(analysis.get("verification_pool", [])),
         "{{SEGMENT_LABELS_JSON}}": json.dumps([s.get("label", "") for s in analysis.get("segment_heat", [])], ensure_ascii=False),
