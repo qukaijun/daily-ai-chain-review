@@ -28,3 +28,11 @@
 - [x] N10 在HTML展示数据源状态和事件Provider
 - [x] N11 接入不暴露API key的Perplexity密钥加载机制
 - [x] N12 将Perplexity改为独立增强数据源
+- [x] N13 Perplexity 结构化事件拆分与引用保留
+- [x] N14 增加小作文/低证据验证状态生命周期
+
+## Next
+
+- [ ] N15 接入真实公告/交易所文件索引并关联 upgraded 事件
+- [ ] N16 增加研报摘要批量导入助手
+- [ ] N17 增加 TradingAgents 式多角色分析层

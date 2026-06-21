@@ -50,6 +50,19 @@ python main.py
 - `bull_case`：看多路径。
 - `bear_case`：风险/证伪路径。
 - `required_confirmation`：下一步验证动作。
+- `verification_status`：验证状态，可选 `pending`、`confirmed`、`rejected`、`expired`、`upgraded`、`not_required`。
+- `verification_note`：验证进展说明。
+
+## 验证状态
+
+| 状态 | 使用场景 |
+| --- | --- |
+| pending | 默认待验证，适用于小作文、新闻、搜索 API、单家研报 |
+| confirmed | 已有多来源交叉验证，但还未升级为公告/财报等高等级证据 |
+| rejected | 后续证据证明事件不成立 |
+| expired | 超过验证窗口仍无证据，停止跟踪 |
+| upgraded | 已找到公告、交易所文件或财报等高等级证据，等待复核写入 |
+| not_required | 高等级来源或人工已确认场景；低证据事件不能使用 |
 
 ## 注意
 

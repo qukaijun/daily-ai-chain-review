@@ -32,14 +32,31 @@ def _tag_class(score: float) -> str:
     return "tag-neutral"
 
 
+def _status_tag_class(status: str) -> str:
+    if status in {"confirmed", "upgraded", "not_required"}:
+        return "tag-up"
+    if status in {"rejected", "expired"}:
+        return "tag-down"
+    return "tag-warn"
+
+
+def _source_link(event: dict[str, Any]) -> str:
+    url = str(event.get("source_url") or "").strip()
+    if not url:
+        return ""
+    return f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">来源</a>'
+
+
 def _events_rows(events: list[dict[str, Any]]) -> str:
     if not events:
-        return '<tr><td colspan="9">暂无事件</td></tr>'
+        return '<tr><td colspan="11">暂无事件</td></tr>'
     rows = []
     for event in events:
         score = float(event.get("score", 0))
         quality = event.get("source_quality", {})
         provider = event.get("provider") or event.get("_source_file") or event.get("source_bucket") or "manual"
+        status = str(event.get("verification_status") or "not_required")
+        status_label = str(event.get("verification_status_label") or status)
         stocks = "、".join(
             f'{s.get("name", "")}({s.get("code", "")})'
             for s in event.get("related_stocks", [])[:8]
@@ -54,7 +71,9 @@ def _events_rows(events: list[dict[str, Any]]) -> str:
             f"<td>{_esc('、'.join(event.get('chain_labels', [])))}</td>"
             f"<td>{_esc(stocks)}</td>"
             f"<td>{score:+.2f}</td>"
+            f"<td><span class=\"tag {_status_tag_class(status)}\">{_esc(status_label)}</span></td>"
             f"<td>{_esc(event.get('required_confirmation', ''))}</td>"
+            f"<td>{_source_link(event)}</td>"
             "</tr>"
         )
     return "\n".join(rows)
@@ -129,13 +148,19 @@ def _verification_cards(events: list[dict[str, Any]]) -> str:
     cards = []
     for event in events:
         quality = event.get("source_quality", {})
+        status = str(event.get("verification_status") or "pending")
+        source_link = _source_link(event)
+        citation_note = str(event.get("citation_note") or "")
         cards.append(
             '<div class="verification-card">'
             f'<div class="card-top"><span class="tag tag-warn">{_esc(quality.get("tier"))}</span>'
-            f'<span>{_esc(quality.get("label"))}</span></div>'
+            f'<span>{_esc(quality.get("label"))}</span>'
+            f'<span class="tag {_status_tag_class(status)}">{_esc(event.get("verification_status_label", status))}</span></div>'
             f'<h3>{_esc(event.get("title"))}</h3>'
             f'<p>{_esc(event.get("summary"))}</p>'
             f'<div class="verify-action">验证：{_esc(event.get("required_confirmation"))}</div>'
+            f'<div class="verify-policy">{_esc(event.get("verification_policy_note", ""))}</div>'
+            f'<div class="source-note">{source_link} {_esc(citation_note[:240])}</div>'
             "</div>"
         )
     return "\n".join(cards)

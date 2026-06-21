@@ -13,6 +13,8 @@
     "bull_case": "如果后续被公告、调研或多家研报验证，可能形成的利好路径。",
     "bear_case": "传闻证据权重低，可能只是短线情绪或误传。",
     "required_confirmation": "必须等待公司公告、交易所文件、调研纪要、可靠新闻或多家研报交叉确认。",
+    "verification_status": "pending",
+    "verification_note": "记录当前验证进度，例如已找到一条新闻但缺少公告。",
     "verification_deadline": "YYYY-MM-DD",
     "privacy_note": "不要写入个人手机号、群名、截图水印、客户姓名等隐私信息。"
   }

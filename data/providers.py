@@ -17,6 +17,70 @@ from config import DATA_SOURCE_CONFIG, SEARCH_CONFIG
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
+PERPLEXITY_EVENT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "events": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "published_at": {"type": "string"},
+                    "source_name": {"type": "string"},
+                    "source_url": {"type": "string"},
+                    "summary": {"type": "string"},
+                    "chain_segments": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "compute_chips",
+                                "ai_servers",
+                                "optical_modules",
+                                "cooling_idc_power",
+                                "cloud_models",
+                                "ai_applications",
+                                "edge_ai_robotics",
+                            ],
+                        },
+                    },
+                    "related_companies": {"type": "array", "items": {"type": "string"}},
+                    "direction": {
+                        "type": "string",
+                        "enum": ["strong_positive", "positive", "neutral", "negative", "strong_negative", "unknown"],
+                    },
+                    "impact_reason": {"type": "string"},
+                    "bull_case": {"type": "string"},
+                    "bear_case": {"type": "string"},
+                    "required_confirmation": {"type": "string"},
+                    "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+                    "citations": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": [
+                    "title",
+                    "published_at",
+                    "source_name",
+                    "source_url",
+                    "summary",
+                    "chain_segments",
+                    "related_companies",
+                    "direction",
+                    "impact_reason",
+                    "bull_case",
+                    "bear_case",
+                    "required_confirmation",
+                    "confidence",
+                    "citations",
+                ],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["events"],
+    "additionalProperties": False,
+}
+
 
 @dataclass
 class ProviderResult:
@@ -175,20 +239,82 @@ class DataSourceManager:
             )
         return {"count": len(items), "items": items}
 
+    def _parse_structured_content(self, content: str) -> tuple[dict[str, Any] | None, str]:
+        text = content.strip()
+        if not text:
+            return None, "empty content"
+        if text.startswith("```"):
+            text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+            text = re.sub(r"\s*```$", "", text)
+        try:
+            parsed = json.loads(text)
+        except Exception as exc:
+            return None, f"json parse failed: {exc}"
+        if not isinstance(parsed, dict) or not isinstance(parsed.get("events"), list):
+            return None, "json shape missing events array"
+        return parsed, ""
+
+    def _build_perplexity_items(
+        self,
+        content: str,
+        citations: list[Any],
+        search_results: list[Any],
+    ) -> tuple[list[dict[str, Any]], bool, str]:
+        parsed, parse_error = self._parse_structured_content(content)
+        if not parsed:
+            return [], False, parse_error
+
+        items: list[dict[str, Any]] = []
+        for event in parsed.get("events", [])[:12]:
+            if not isinstance(event, dict):
+                continue
+            event_citations = event.get("citations") if isinstance(event.get("citations"), list) else []
+            items.append(
+                {
+                    "title": event.get("title", ""),
+                    "time": event.get("published_at", ""),
+                    "source": event.get("source_name", "Perplexity Sonar"),
+                    "url": event.get("source_url", ""),
+                    "summary": event.get("summary", ""),
+                    "content": event.get("impact_reason", ""),
+                    "chain_segments": event.get("chain_segments", []),
+                    "related_companies": event.get("related_companies", []),
+                    "direction": event.get("direction", "unknown"),
+                    "bull_case": event.get("bull_case", ""),
+                    "bear_case": event.get("bear_case", ""),
+                    "required_confirmation": event.get("required_confirmation", ""),
+                    "confidence": event.get("confidence", "low"),
+                    "citations": event_citations or citations,
+                    "search_results": search_results,
+                    "structured": True,
+                }
+            )
+        if not items:
+            return [], False, "structured response contains no usable events"
+        return items, True, ""
+
+    def _post_perplexity(self, payload: dict[str, Any], api_key: str) -> requests.Response:
+        url = SEARCH_CONFIG["perplexity_base_url"].rstrip("/") + "/chat/completions"
+        return requests.post(
+            url,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=45,
+        )
+
     def _perplexity_search(self) -> dict[str, Any]:
         api_key = SEARCH_CONFIG.get("perplexity_api_key", "")
         if not api_key:
             return {"count": 0, "items": [], "error": "PERPLEXITY_API_KEY not configured"}
-        url = SEARCH_CONFIG["perplexity_base_url"].rstrip("/") + "/chat/completions"
         payload = {
             "model": SEARCH_CONFIG["perplexity_model"],
             "messages": [
                 {
                     "role": "system",
                     "content": (
-                        "Return concise AI industry-chain news with source citations. "
-                        "Focus on facts, source dates, and what still needs verification. "
-                        "Do not provide trading advice."
+                        "Return structured AI industry-chain event candidates with citations. "
+                        "Focus on facts, source dates, source URLs, affected segments, related companies, "
+                        "and what still needs verification. Do not provide trading advice."
                     ),
                 },
                 {
@@ -196,17 +322,26 @@ class DataSourceManager:
                     "content": (
                         "请检索最近24小时全球和中国AI产业链重要变化，覆盖算力、GPU/HBM、"
                         "AI服务器、光模块、液冷、数据中心、大模型、AI应用、机器人。"
-                        "每条请说明来源、时间、影响环节、可能相关公司和需要验证的证据。"
+                        "请返回 JSON 对象，字段为 events 数组；每条必须说明来源、时间、"
+                        "source_url、影响环节、可能相关公司、利好/利空方向、正反影响和需要验证的证据。"
                     ),
                 },
             ],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "ai_chain_events",
+                    "schema": PERPLEXITY_EVENT_SCHEMA,
+                },
+            },
         }
-        r = requests.post(
-            url,
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json=payload,
-            timeout=30,
-        )
+        r = self._post_perplexity(payload, api_key)
+        used_structured_request = True
+        if r.status_code >= 400 and "response_format" in r.text:
+            fallback_payload = dict(payload)
+            fallback_payload.pop("response_format", None)
+            r = self._post_perplexity(fallback_payload, api_key)
+            used_structured_request = False
         if r.status_code >= 400:
             return {"count": 0, "items": [], "error": f"HTTP {r.status_code}: {r.text[:160]}"}
         data = r.json()
@@ -216,6 +351,22 @@ class DataSourceManager:
         except Exception:
             content = json.dumps(data, ensure_ascii=False)[:2000]
         citations = data.get("citations", [])
+        search_results = data.get("search_results", [])
+        if not isinstance(citations, list):
+            citations = []
+        if not isinstance(search_results, list):
+            search_results = []
+        items, structured, parse_error = self._build_perplexity_items(content, citations, search_results)
+        if items:
+            return {
+                "count": len(items),
+                "items": items,
+                "raw_content": content[:4000],
+                "citations": citations,
+                "search_results": search_results,
+                "structured": structured,
+                "used_structured_request": used_structured_request,
+            }
         return {
             "count": 1,
             "items": [
@@ -225,6 +376,14 @@ class DataSourceManager:
                     "source": "Perplexity Sonar",
                     "content": content,
                     "citations": citations,
+                    "search_results": search_results,
+                    "structured": False,
                 }
             ],
+            "raw_content": content[:4000],
+            "citations": citations,
+            "search_results": search_results,
+            "structured": False,
+            "used_structured_request": used_structured_request,
+            "parse_error": parse_error,
         }

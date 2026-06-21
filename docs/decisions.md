@@ -12,3 +12,5 @@
 - 公告目录纳入事件加载链路；小作文和非高等级证据不得设置 `model_update_candidate=true`。
 - 数据源接入采用 provider 管理器：每个来源保留状态、错误、获取时间和证据层级；新闻/搜索/行情类数据只进入候选或事件层，不直接改核心假设。
 - 复用大盘日报的密钥管理方式：读取全局 `E:\AI工具\secrets\llm.env` 和项目 `.env.local`，不把 API key 写入仓库或聊天。
+- Perplexity 作为独立搜索增强源，优先请求结构化事件和引用；失败时回退摘要解析，结果默认进入 `search_api` 与验证池。
+- 小作文、传闻、新闻和搜索增强事件采用验证状态生命周期：`pending/confirmed/rejected/expired/upgraded/not_required`。

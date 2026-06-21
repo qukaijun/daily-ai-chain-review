@@ -51,6 +51,34 @@ def _source_quality(source_type: str) -> dict[str, Any]:
     }
 
 
+def _verification_status(event: dict[str, Any], source_type: str, tier: str) -> dict[str, str]:
+    raw_status = str(event.get("verification_status") or "").strip().lower()
+    allowed = {"pending", "confirmed", "rejected", "expired", "upgraded", "not_required"}
+    if raw_status not in allowed:
+        if tier in {"P2", "P3"} or source_type in {"rumor", "xiaozuowen", "search_api"}:
+            raw_status = "pending"
+        else:
+            raw_status = "not_required"
+
+    labels = {
+        "pending": "待验证",
+        "confirmed": "已交叉验证",
+        "rejected": "已证伪",
+        "expired": "已过期",
+        "upgraded": "已升级为高等级证据",
+        "not_required": "无需验证",
+    }
+    notes = {
+        "pending": "不得改变核心假设，只进入事件/验证池。",
+        "confirmed": "可提高跟踪优先级，但仍需区分是否达到高等级证据。",
+        "rejected": "保留记录，后续不纳入正向/负向主判断。",
+        "expired": "超过验证窗口后降权处理。",
+        "upgraded": "需关联公告、交易所文件或财报后，才可进入核心假设复核。",
+        "not_required": "高等级来源仍需人工复核原文。",
+    }
+    return {"status": raw_status, "label": labels[raw_status], "note": notes[raw_status]}
+
+
 def _segment_lookup(stock_pool: dict[str, Any]) -> dict[str, set[str]]:
     lookup: dict[str, set[str]] = defaultdict(set)
     for segment_id, segment in stock_pool.items():
@@ -107,6 +135,7 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
     for event in events:
         scored = _score_event(event)
         source_type = str(event.get("source_type", "manual"))
+        verification = _verification_status(event, source_type, str(scored["source_quality"]["tier"]))
         chain_segments = [str(x) for x in event.get("chain_segments", [])]
         affected_codes = [str(x) for x in event.get("affected_stocks", [])]
 
@@ -131,8 +160,17 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
         item["chain_segments"] = chain_segments
         item["chain_labels"] = [pool.get(s, {}).get("label", s) for s in chain_segments]
         item["related_stocks"] = related_stocks
+        item["verification_status"] = verification["status"]
+        item["verification_status_label"] = verification["label"]
+        item["verification_policy_note"] = verification["note"]
         item["model_update"] = scored["source_quality"]["tier"] == "P0"
-        item["needs_verification"] = scored["source_quality"]["tier"] in {"P2", "P3"} or source_type in {"rumor", "xiaozuowen"}
+        item["needs_verification"] = (
+            scored["source_quality"]["tier"] in {"P2", "P3"}
+            or source_type in {"rumor", "xiaozuowen", "search_api"}
+            or verification["status"] in {"pending", "upgraded"}
+        )
+        if verification["status"] in {"rejected", "expired"}:
+            item["needs_verification"] = False
         if item["needs_verification"]:
             verification_pool.append(item)
         enriched_events.append(item)

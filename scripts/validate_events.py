@@ -32,6 +32,7 @@ REQUIRED_FIELDS = [
 ]
 LOW_EVIDENCE_TYPES = {"rumor", "xiaozuowen"}
 HIGH_EVIDENCE_TYPES = {"exchange_filing", "company_announcement", "financial_report"}
+VERIFICATION_STATUSES = {"pending", "confirmed", "rejected", "expired", "upgraded", "not_required"}
 
 
 def _known_segments(pool: dict[str, Any]) -> set[str]:
@@ -80,6 +81,13 @@ def validate_event(event: dict[str, Any], pool: dict[str, Any]) -> list[str]:
 
     if source_type not in HIGH_EVIDENCE_TYPES and event.get("model_update_candidate") is True:
         errors.append(f"{event_id}: only high-evidence sources can be model_update_candidate=true")
+
+    verification_status = str(event.get("verification_status", "")).strip()
+    if verification_status and verification_status not in VERIFICATION_STATUSES:
+        errors.append(f"{event_id}: unknown verification_status {verification_status}")
+
+    if source_type in LOW_EVIDENCE_TYPES and verification_status == "not_required":
+        errors.append(f"{event_id}: low-evidence event cannot use verification_status=not_required")
 
     return errors
 

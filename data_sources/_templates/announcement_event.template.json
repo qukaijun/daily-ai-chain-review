@@ -13,6 +13,8 @@
     "bull_case": "直接经营影响：收入、利润、现金流、订单兑现或份额提升。",
     "bear_case": "风险：金额小、确认周期长、毛利率不明、一次性收入或仍需验收。",
     "required_confirmation": "后续财报收入确认、订单执行、毛利率、现金流和管理层说明。",
+    "verification_status": "not_required",
+    "verification_note": "高等级来源仍需人工复核原文、金额、期间和会计确认口径。",
     "source_url": "",
     "announcement_id": "",
     "model_update_candidate": true
