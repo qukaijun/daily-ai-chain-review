@@ -21,7 +21,7 @@ active
 
 ## Next Action
 
-初始化 Git 仓库，跑密钥扫描，创建 GitHub 远端并推送。
+推进下一阶段：增加研报摘要导入模板、小作文验证池模板、公告/交易所文件索引。
 
 ## Verification
 
@@ -29,3 +29,4 @@ active
 - `python scripts/health_check.py` 通过。
 - `python main.py` 已生成首版 HTML 和分析 JSON。
 - `python scripts/screenshot_report.py` 已生成浏览器截图，报告与 Chart.js 均被本地 HTTP 服务成功加载。
+- GitHub 仓库已创建并推送：`https://github.com/qukaijun/daily-ai-chain-review`

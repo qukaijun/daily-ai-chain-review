@@ -6,7 +6,7 @@
 - [x] T2 建立 AI 产业链股票池
 - [x] T3 实现事件影响引擎 MVP
 - [x] T4 生成首版 HTML 复盘页
-- [ ] T5 初始化 Git 并推送 GitHub
+- [x] T5 初始化 Git 并推送 GitHub
 
 ## Next
 
