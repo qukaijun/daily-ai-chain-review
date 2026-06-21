@@ -38,7 +38,7 @@ h1{font-size:26px;margin:10px 0 6px;letter-spacing:0}
 .section h2{font-size:20px;margin-bottom:6px}
 .section-kicker{font-size:12px;color:var(--accent);font-weight:800;margin-bottom:4px}
 .section-sub{font-size:13px;color:var(--text-muted);margin-bottom:16px}
-.dashboard-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);gap:14px;align-items:start;margin-bottom:18px}
+.dashboard-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.55fr);gap:14px;align-items:stretch;margin-bottom:14px}
 .butler-card{background:var(--bg-card);border:1px solid var(--accent);border-radius:var(--radius);padding:16px}
 .butler-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px}
 .butler-head h2{font-size:22px;margin:0}
@@ -54,6 +54,12 @@ h1{font-size:26px;margin:10px 0 6px;letter-spacing:0}
 .ops-panel{display:grid;gap:10px}
 .compact-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
 .compact-title{font-size:13px;font-weight:800;margin-bottom:8px}
+.identity-card{background:var(--bg-card);border:1px solid var(--accent);border-radius:var(--radius);padding:14px;height:100%;display:flex;flex-direction:column;gap:10px}
+.identity-row{border-bottom:1px solid var(--line);padding-bottom:8px}
+.identity-row:last-child{border-bottom:none;padding-bottom:0}
+.identity-label{font-size:11px;color:var(--text-muted);margin-bottom:3px}
+.identity-value{font-size:13px;font-weight:800;line-height:1.45}
+.identity-tip{font-size:12px;color:#7A5B2D;background:#FFF4E6;border:1px solid #E8C991;border-radius:6px;padding:8px;line-height:1.55}
 .source-chips{display:flex;gap:8px;flex-wrap:wrap}
 .source-chip{display:inline-block;border-radius:20px;padding:4px 9px;font-size:12px;font-weight:700}
 .flow-rail{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:18px}
@@ -61,6 +67,17 @@ h1{font-size:26px;margin:10px 0 6px;letter-spacing:0}
 .flow-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-bottom:6px}
 .flow-name{font-size:13px;font-weight:800;margin-bottom:4px}
 .flow-note{font-size:11px;color:var(--text-muted);line-height:1.45}
+.chain-strip{display:flex;align-items:stretch;gap:6px;overflow:auto;padding:4px 0 8px}
+.chain-node{min-width:128px;flex:1;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:10px}
+.chain-node.positive{border-top:4px solid var(--up)}
+.chain-node.negative{border-top:4px solid var(--down)}
+.chain-node.neutral{border-top:4px solid #8A817A}
+.chain-label{font-size:12px;font-weight:800;line-height:1.35;min-height:32px}
+.chain-score{font-size:20px;font-weight:800;margin:4px 0}
+.chain-node.positive .chain-score{color:var(--up)}
+.chain-node.negative .chain-score{color:var(--down)}
+.chain-dir{font-size:11px;color:var(--text-muted)}
+.chain-arrow{align-self:center;color:var(--accent);font-weight:800}
 .front-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
 .metric-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
@@ -128,6 +145,8 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12p
   .dashboard-grid,.front-grid{grid-template-columns:1fr}
   .flow-rail{grid-template-columns:1fr 1fr}
   .butler-grid{grid-template-columns:1fr 1fr 1fr}
+  .chain-strip{display:grid;grid-template-columns:1fr 1fr}
+  .chain-arrow{display:none}
   .hero-meta{text-align:left}
   h1{font-size:24px}
 }
@@ -161,21 +180,32 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12p
   <main class="content">
     <section class="dashboard-grid">
       {{BUTLER_CONCLUSION}}
-      <aside class="ops-panel">
-        <div class="compact-card">
-          <div class="compact-title">数据源简况</div>
-          <div class="source-chips">{{SOURCE_SUMMARY_CHIPS}}</div>
-          <div class="micro-note">一个源不可用时不会中断，系统保留状态并继续使用其他来源。</div>
+      <aside class="identity-card">
+        <div class="identity-row">
+          <div class="identity-label">生成方</div>
+          <div class="identity-value">Daily AI Chain Review 本地工作流</div>
         </div>
-        <div class="compact-card">
-          <div class="compact-title">自动源明细</div>
-          {{SOURCE_STATUS_CARDS}}
+        <div class="identity-row">
+          <div class="identity-label">方法</div>
+          <div class="identity-value">大盘日报底座 + TradingAgents 式多角色层</div>
         </div>
-        <div class="compact-card">
-          <div class="compact-title">基本提示</div>
-          <div class="micro-note">本报告是研究辅助，不构成投资建议；公告、交易所文件、财报经人工复核后，才可用于核心假设更新。</div>
+        <div class="identity-row">
+          <div class="identity-label">今日首要主线</div>
+          <div class="identity-value">{{PRIMARY_SEGMENT}}</div>
         </div>
+        <div class="identity-row">
+          <div class="identity-label">生成时间</div>
+          <div class="identity-value">{{GENERATED_AT}}</div>
+        </div>
+        <div class="identity-tip">基本提示：本报告是研究辅助，不构成投资建议；低证据事件只进验证池，公告/财报等高等级证据经人工复核后才可更新核心假设。</div>
       </aside>
+    </section>
+
+    <section class="section">
+      <div class="section-kicker">产业链条</div>
+      <h2>AI产业链传导</h2>
+      <div class="section-sub">从上游算力、服务器、光通信，到下游模型和应用，第一眼看清哪段在变强、哪段承压。</div>
+      {{INDUSTRY_CHAIN_STRIP}}
     </section>
 
     <section class="section">
@@ -205,18 +235,6 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12p
           </table>
         </div>
       </div>
-    </section>
-
-    <section class="section">
-      <h2>数据源状态</h2>
-      <details class="table-wrap">
-        <summary>展开查看 provider、获取时间、错误和数量</summary>
-        <table>
-          <thead><tr><th>Provider</th><th>状态</th><th>证据层级</th><th>获取时间</th><th>数量</th><th>错误</th></tr></thead>
-          <tbody>{{SOURCE_STATUS_ROWS}}</tbody>
-        </table>
-      </details>
-      {{VERIFICATION_UPDATE_NOTE}}
     </section>
 
     <section class="section">
@@ -274,6 +292,27 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12p
       <h2>小作文/低证据验证池</h2>
       <div class="section-sub">低证据事件单独展示，不混入核心判断。</div>
       <div class="verification-grid">{{VERIFICATION_CARDS}}</div>
+    </section>
+
+    <section class="section">
+      <h2>数据来源与运行状态</h2>
+      <div class="section-sub">来源、Provider 状态、错误和获取时间统一放在底部，供复核和排障使用。</div>
+      <div class="compact-card">
+        <div class="compact-title">数据源简况</div>
+        <div class="source-chips">{{SOURCE_SUMMARY_CHIPS}}</div>
+      </div>
+      <div class="compact-card">
+        <div class="compact-title">自动源明细</div>
+        {{SOURCE_STATUS_CARDS}}
+      </div>
+      <details class="table-wrap">
+        <summary>展开完整 provider 表</summary>
+        <table>
+          <thead><tr><th>Provider</th><th>状态</th><th>证据层级</th><th>获取时间</th><th>数量</th><th>错误</th></tr></thead>
+          <tbody>{{SOURCE_STATUS_ROWS}}</tbody>
+        </table>
+      </details>
+      {{VERIFICATION_UPDATE_NOTE}}
     </section>
   </main>
 

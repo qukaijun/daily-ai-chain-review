@@ -189,7 +189,7 @@ def main() -> int:
 
     if report_path and report_path.exists():
         html = report_path.read_text(encoding="utf-8", errors="replace")
-        for marker in ("数据源状态", "自动验证与去重", "多角色复盘"):
+        for marker in ("数据来源与运行状态", "自动验证与去重", "多角色复盘"):
             if marker not in html:
                 issues.append(f"HTML missing section marker: {marker}")
 

@@ -248,6 +248,37 @@ def _pipeline_steps(status_items: list[dict[str, Any]], multi_agent: dict[str, A
     )
 
 
+def _industry_chain_strip(segments: list[dict[str, Any]]) -> str:
+    if not segments:
+        return '<div class="empty compact">暂无产业链分层数据</div>'
+    order = [
+        "ai_chips",
+        "hbm_packaging",
+        "ai_servers",
+        "optical_modules",
+        "cooling_idc_power",
+        "cloud_models",
+        "ai_applications",
+        "edge_robotics",
+    ]
+    by_id = {str(item.get("segment_id") or ""): item for item in segments if isinstance(item, dict)}
+    ordered = [by_id[item] for item in order if item in by_id]
+    rest = [item for item in segments if isinstance(item, dict) and item not in ordered]
+    items = (ordered + rest)[:8]
+    nodes = []
+    for item in items:
+        score = float(item.get("score") or 0)
+        cls = "positive" if score > 0 else "negative" if score < 0 else "neutral"
+        nodes.append(
+            '<div class="chain-node ' + cls + '">'
+            f'<div class="chain-label">{_esc(item.get("label"))}</div>'
+            f'<div class="chain-score">{score:+.2f}</div>'
+            f'<div class="chain-dir">{_esc(item.get("direction"))}</div>'
+            "</div>"
+        )
+    return '<div class="chain-strip">' + '<div class="chain-arrow">→</div>'.join(nodes) + "</div>"
+
+
 def _butler_conclusion(analysis: dict[str, Any], mainline: str) -> str:
     summary = analysis.get("summary", {}) if isinstance(analysis.get("summary"), dict) else {}
     multi_agent = analysis.get("multi_agent_analysis", {})
@@ -289,7 +320,7 @@ def _butler_conclusion(analysis: dict[str, Any], mainline: str) -> str:
         '</div>'
         f'<div class="butler-points">{_list_html(focus_items)}</div>'
         f'<div class="butler-tip">{_esc(quality_gate)}</div>'
-        f'<div class="micro-note">生成方：Daily AI Chain Review 本地工作流；底座：大盘日报工程结构 + TradingAgents 式多角色层；多角色模式：{_esc(mode)} / { _esc(deep_state) }。</div>'
+        f'<div class="micro-note">多角色模式：{_esc(mode)} / { _esc(deep_state) }。结论只做复盘排序，证据不足的事件不进入核心假设。</div>'
         '</div>'
     )
 
@@ -574,9 +605,11 @@ def render_report(analysis: dict[str, Any], output_path: str | Path | None = Non
     summary = analysis.get("summary", {})
     top_segments = summary.get("top_segments", [])
     mainline = "、".join(s.get("label", "") for s in top_segments) or "暂无主线"
+    primary_segment = str(top_segments[0].get("label") if top_segments else "暂无主线")
 
     reps = {
         "{{GENERATED_AT}}": analysis.get("generated_at", ""),
+        "{{PRIMARY_SEGMENT}}": _esc(primary_segment),
         "{{EVENT_COUNT}}": str(summary.get("event_count", 0)),
         "{{POSITIVE_COUNT}}": str(summary.get("positive_count", 0)),
         "{{NEGATIVE_COUNT}}": str(summary.get("negative_count", 0)),
@@ -587,6 +620,7 @@ def render_report(analysis: dict[str, Any], output_path: str | Path | None = Non
             analysis.get("data_source_status", []),
             analysis.get("multi_agent_analysis", {}),
         ),
+        "{{INDUSTRY_CHAIN_STRIP}}": _industry_chain_strip(analysis.get("segment_heat", [])),
         "{{SOURCE_SUMMARY_CHIPS}}": _source_summary_chips(analysis.get("data_source_status", [])),
         "{{SOURCE_STATUS_CARDS}}": _source_status_cards(analysis.get("data_source_status", [])),
         "{{FRONT_EVENT_ROWS}}": _front_event_rows(analysis.get("events", [])),
