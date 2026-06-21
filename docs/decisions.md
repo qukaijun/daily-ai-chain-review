@@ -27,3 +27,4 @@
 - 外部通知通道采用显式开启策略：默认仅 console 预览，`--notify` 加 `DAA_NOTIFY_ENABLED=1` 才发送；首版支持企业微信 webhook，通知只发紧凑摘要和本地报告路径，不发送报告全文、API key 或 webhook 明文。
 - 通知分级采用 `success/warning/failure`：可用但有 provider 异常时不阻断日报，而以 warning 摘要提示；自动化命令失败时读取 `latest_run.json` 和日志尾部生成 failure 告警，便于定位失败命令。
 - 通知发送记录采用 JSONL 运行产物存放在 `output_files/notification_logs/`；真实 webhook 发送支持有限重试和指数退避，记录只保存脱敏 webhook、状态、尝试次数、错误摘要和报告路径，不提交 GitHub。
+- 巡检和通知按“最近已完成交易日”选择目标复盘日，默认盘后时间为 17:00；周末、节假日和盘前使用上一交易日，避免午夜测试产物覆盖正式市场源日报。节假日和补班交易日先用环境变量维护，后续可升级为年度日历文件或官方数据源。

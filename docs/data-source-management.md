@@ -232,3 +232,12 @@ python scripts/run_daily_review.py --deep-agents
 - 自动化命令失败：`failure`，附失败命令、退出码、日志路径和日志尾部。
 
 通知发送会记录到 `output_files/notification_logs/`，用于审计是否已尝试发送、尝试次数、最后错误和对应报告路径。webhook 发送失败时会按配置进行重试退避，避免短暂网络波动直接丢失告警。
+
+## 交易日目标选择
+
+巡检和通知默认不按“最新文件”或“自然日今天”盲选报告，而是按 `market_calendar/trading_calendar.py` 计算最近已完成交易日。午夜后本地测试生成的报告不会覆盖上一交易日的市场源日报选择；如需指定日期，可使用：
+
+```powershell
+python scripts/check_latest_run.py --review-date 2026-06-21 --require-market-sources
+python scripts/notify_daily_review.py --dry-run --review-date 2026-06-21 --require-market-sources
+```

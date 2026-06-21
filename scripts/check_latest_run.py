@@ -11,6 +11,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from market_calendar.trading_calendar import latest_completed_trading_day, parse_review_date, ymd  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = ROOT / "output_files"
 TIMESTAMP_RE = re.compile(r"_(\d{8}_\d{6})")
@@ -64,11 +68,18 @@ def _match_file(prefix: str, token: str, suffix: str) -> Path | None:
     return path if path.exists() else None
 
 
-def _latest_complete_run(require_market_sources: bool = False) -> tuple[Path | None, Path | None, Path | None]:
+def _latest_complete_run(
+    require_market_sources: bool = False,
+    review_date: str = "",
+) -> tuple[Path | None, Path | None, Path | None]:
+    target_day = parse_review_date(review_date) if review_date else latest_completed_trading_day()
+    target_ymd = ymd(target_day)
     analyses = sorted(OUTPUT_DIR.glob("analysis_*.json"), key=lambda item: item.stat().st_mtime, reverse=True)
     latest = analyses[0] if analyses else None
     for analysis_path in analyses:
         token = _token(analysis_path)
+        if target_ymd and not token.startswith(target_ymd):
+            continue
         report_path = _match_file("report_full_", token, ".html")
         market_path = _match_file("market_sources_", token, ".json")
         if not report_path:
@@ -109,6 +120,7 @@ def main() -> int:
     parser.add_argument("--max-age-hours", type=float, default=36, help="Maximum allowed age for the latest analysis")
     parser.add_argument("--min-events", type=int, default=1, help="Minimum event count expected in the analysis")
     parser.add_argument("--require-today", action="store_true", help="Require the latest analysis timestamp to be today")
+    parser.add_argument("--review-date", default="", help="Target review date YYYY-MM-DD; default latest completed trading day")
     parser.add_argument(
         "--require-market-sources",
         action="store_true",
@@ -116,7 +128,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    analysis_path, report_path, market_path = _latest_complete_run(args.require_market_sources)
+    target_day = parse_review_date(args.review_date) if args.review_date else latest_completed_trading_day()
+    analysis_path, report_path, market_path = _latest_complete_run(
+        args.require_market_sources,
+        review_date=target_day.strftime("%Y-%m-%d"),
+    )
     analysis_token = _token(analysis_path)
     analysis = _read_json(analysis_path)
     market_data = _read_json(market_path)
@@ -130,6 +146,7 @@ def main() -> int:
     print(f"[INFO] analysis: {analysis_path or '<missing>'}")
     print(f"[INFO] report:   {report_path or '<missing>'}")
     print(f"[INFO] sources:  {market_path or '<missing>'}")
+    print(f"[INFO] target_review_date: {target_day.strftime('%Y-%m-%d')}")
 
     if not analysis_path:
         issues.append("missing analysis_*.json")
@@ -139,6 +156,8 @@ def main() -> int:
     analysis_ts = _timestamp(analysis_path)
     if args.require_today and analysis_ts and analysis_ts.strftime("%Y%m%d") != datetime.now().strftime("%Y%m%d"):
         issues.append(f"latest analysis is not from today: {analysis_ts.strftime('%Y-%m-%d')}")
+    if analysis_ts and analysis_ts.strftime("%Y%m%d") != target_day.strftime("%Y%m%d"):
+        issues.append(f"latest analysis is not from target review date: {analysis_ts.strftime('%Y-%m-%d')}")
 
     if not report_path or not report_path.exists():
         issues.append("missing matching report_full_*.html")

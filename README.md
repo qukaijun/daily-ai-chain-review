@@ -36,6 +36,7 @@ python scripts/health_check.py
 python scripts/run_daily_review.py
 python scripts/notify_daily_review.py --dry-run
 python scripts/notify_daily_review.py --dry-run --kind failure
+python scripts/check_trading_window.py
 ```
 
 输出文件在：
@@ -131,6 +132,8 @@ python scripts/run_daily_review.py --notify
 通知分为 `success/warning/failure` 三类：数据源存在 empty/failed 时为 warning，自动运行失败时从 `latest_run.json` 和日志尾部生成 failure 告警。
 通知尝试会写入 `output_files/notification_logs/`，并支持 webhook 失败重试退避。
 
+巡检和通知默认使用最近已完成交易日作为目标复盘日，避免午夜测试报告干扰上一交易日市场源日报。可用 `--review-date YYYY-MM-DD` 指定日期。
+
 安装 Windows 交易日计划任务：
 
 ```powershell
@@ -170,3 +173,4 @@ python scripts/check_search_config.py
 9. 已加入日报摘要通知底座，支持本地预览和企业微信 webhook。
 10. 已加入通知异常分级和失败告警模板。
 11. 已加入通知发送记录和 webhook 重试退避。
+12. 已加入交易日历和盘后运行窗口治理。

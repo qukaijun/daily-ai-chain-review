@@ -24,7 +24,7 @@ python scripts/run_daily_review.py
 6. `scripts/check_deep_agent_config.py`
 7. `scripts/check_verification_clusters.py`
 8. `main.py --fetch-market`
-9. `scripts/check_latest_run.py --require-today --require-market-sources`
+9. `scripts/check_latest_run.py --require-market-sources`
 
 日志和运行摘要写入：
 
@@ -37,7 +37,8 @@ output_files/daily_runs/
 ## 单独巡检
 
 ```powershell
-python scripts/check_latest_run.py --require-today --require-market-sources
+python scripts/check_latest_run.py --require-market-sources
+python scripts/check_latest_run.py --review-date 2026-06-21 --require-market-sources
 ```
 
 巡检会检查：
@@ -50,6 +51,32 @@ python scripts/check_latest_run.py --require-today --require-market-sources
 - 数据源是否全部不可用。
 
 Perplexity 未配置时，对应 provider 会显示 `empty`，但只要其他数据源可用，不视为阻断。
+
+## 交易日与盘后窗口
+
+系统默认使用“最近已完成交易日”作为复盘目标日，而不是简单使用自然日。规则：
+
+- 周一至周五默认为候选交易日；
+- 默认盘后可用时间为 `17:00`；
+- 交易日 `17:00` 之后，目标复盘日为当天；
+- 交易日 `17:00` 之前、周末或节假日，目标复盘日为上一交易日；
+- 可通过 `DAA_MARKET_HOLIDAYS` 和 `DAA_MARKET_EXTRA_TRADING_DAYS` 手工维护节假日和补班交易日。
+
+检查当前窗口：
+
+```powershell
+python scripts/check_trading_window.py
+python scripts/check_trading_window.py --now "2026-06-22 00:10:00"
+python scripts/run_daily_review.py --review-date 2026-06-21 --no-fetch-market
+```
+
+配置项：
+
+```text
+DAA_REVIEW_READY_TIME=17:00
+DAA_MARKET_HOLIDAYS=2026-01-01,2026-02-17
+DAA_MARKET_EXTRA_TRADING_DAYS=
+```
 
 ## Windows 计划任务
 

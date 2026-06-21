@@ -186,6 +186,21 @@ NOTIFICATION_CONFIG = {
     "retry_backoff_seconds": float(_env("DAA_NOTIFY_RETRY_BACKOFF_SECONDS", "2") or 2),
 }
 
+TRADING_CALENDAR_CONFIG = {
+    "market": _env("DAA_MARKET_CALENDAR", "CN_A"),
+    "review_ready_time": _env("DAA_REVIEW_READY_TIME", "17:00"),
+    "holidays": [
+        item.strip()
+        for item in _env("DAA_MARKET_HOLIDAYS", "").split(",")
+        if item.strip()
+    ],
+    "extra_trading_days": [
+        item.strip()
+        for item in _env("DAA_MARKET_EXTRA_TRADING_DAYS", "").split(",")
+        if item.strip()
+    ],
+}
+
 ENV_CONFIG = {
     "global_env_path": str(_GLOBAL_ENV_PATH),
     "loaded_env_files": list(_LOADED_ENV_FILES),

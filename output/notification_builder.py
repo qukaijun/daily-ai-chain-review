@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from market_calendar.trading_calendar import latest_completed_trading_day, parse_review_date, ymd
+
 
 TIMESTAMP_RE = re.compile(r"_(\d{8}_\d{6})")
 
@@ -39,10 +41,18 @@ def _match_file(output_dir: Path, prefix: str, token: str, suffix: str) -> Path 
     return path if path.exists() else None
 
 
-def latest_complete_artifacts(output_dir: Path, require_market_sources: bool = False) -> ReviewArtifacts:
+def latest_complete_artifacts(
+    output_dir: Path,
+    require_market_sources: bool = False,
+    review_date: str = "",
+) -> ReviewArtifacts:
+    target_day = parse_review_date(review_date) if review_date else latest_completed_trading_day()
+    target_ymd = ymd(target_day)
     analyses = sorted(output_dir.glob("analysis_*.json"), key=lambda item: item.stat().st_mtime, reverse=True)
     for analysis_path in analyses:
         token = _token(analysis_path)
+        if target_ymd and not token.startswith(target_ymd):
+            continue
         report_path = _match_file(output_dir, "report_full_", token, ".html")
         market_path = _match_file(output_dir, "market_sources_", token, ".json")
         if not report_path:
@@ -160,20 +170,30 @@ def _failed_command(run_data: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
-def build_daily_notification(output_dir: Path, require_market_sources: bool = False) -> dict[str, Any]:
-    artifacts = latest_complete_artifacts(output_dir, require_market_sources=require_market_sources)
+def build_daily_notification(
+    output_dir: Path,
+    require_market_sources: bool = False,
+    review_date: str = "",
+) -> dict[str, Any]:
+    target_day = parse_review_date(review_date) if review_date else latest_completed_trading_day()
+    artifacts = latest_complete_artifacts(
+        output_dir,
+        require_market_sources=require_market_sources,
+        review_date=target_day.strftime("%Y-%m-%d"),
+    )
     analysis = _read_json(artifacts.analysis_path)
     market_data = _read_json(artifacts.market_sources_path)
     summary = analysis.get("summary", {}) if isinstance(analysis.get("summary"), dict) else {}
     source_items = _source_status(analysis, market_data)
     generated_at = str(analysis.get("generated_at") or "")
-    title = f"每日AI产业链复盘 {generated_at or datetime.now().strftime('%Y-%m-%d')}"
+    title = f"每日AI产业链复盘 {target_day.strftime('%Y-%m-%d')}"
     report_path = str(artifacts.report_path) if artifacts.report_path else ""
     lines = [
         f"事件数：{summary.get('event_count', 0)}，利好：{summary.get('positive_count', 0)}，利空：{summary.get('negative_count', 0)}，验证池：{summary.get('verification_count', 0)}",
         f"今日主线：{_top_segments(analysis)}",
         f"多角色：{_deep_agent_line(analysis)}",
         f"数据源：{_provider_line(source_items)}",
+        f"生成时间：{generated_at or '未知'}",
         f"报告：{report_path or '未找到'}",
         "边界：研究辅助，不构成投资建议；低证据事件需公告/财报等高等级证据复核。",
     ]
@@ -189,6 +209,7 @@ def build_daily_notification(output_dir: Path, require_market_sources: bool = Fa
     return {
         "kind": "daily",
         "severity": severity,
+        "review_date": target_day.strftime("%Y-%m-%d"),
         "title": title,
         "text": "\n".join(lines),
         "artifacts": {
@@ -253,12 +274,21 @@ def build_notification(
     output_dir: Path,
     require_market_sources: bool = False,
     kind: str = "auto",
+    review_date: str = "",
 ) -> dict[str, Any]:
     if kind == "failure":
         return build_failure_notification(output_dir)
     if kind == "success":
-        return build_daily_notification(output_dir, require_market_sources=require_market_sources)
+        return build_daily_notification(
+            output_dir,
+            require_market_sources=require_market_sources,
+            review_date=review_date,
+        )
     run_data = _read_json(_latest_run_path(output_dir))
     if run_data.get("status") == "failed":
         return build_failure_notification(output_dir)
-    return build_daily_notification(output_dir, require_market_sources=require_market_sources)
+    return build_daily_notification(
+        output_dir,
+        require_market_sources=require_market_sources,
+        review_date=review_date,
+    )

@@ -130,6 +130,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Preview only, never send")
     parser.add_argument("--require-market-sources", action="store_true", help="Require market-source artifacts")
     parser.add_argument("--kind", choices=["auto", "success", "failure"], default="auto", help="Notification template")
+    parser.add_argument("--review-date", default="", help="Target review date YYYY-MM-DD; default latest completed trading day")
     parser.add_argument("--json", action="store_true", help="Print notification JSON")
     args = parser.parse_args()
 
@@ -137,6 +138,7 @@ def main() -> int:
         OUTPUT_DIR,
         require_market_sources=args.require_market_sources,
         kind=args.kind,
+        review_date=args.review_date,
     )
     if args.json:
         print(json.dumps(notification, ensure_ascii=False, indent=2))

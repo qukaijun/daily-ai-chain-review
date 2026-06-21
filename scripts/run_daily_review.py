@@ -81,6 +81,7 @@ def main() -> int:
     parser.add_argument("--skip-postflight", action="store_true", help="Skip latest report QA")
     parser.add_argument("--deep-agents", action="store_true", help="Enable optional LLM deep multi-agent review")
     parser.add_argument("--notify", action="store_true", help="Send configured notification after successful QA")
+    parser.add_argument("--review-date", default="", help="Postflight/notification target date YYYY-MM-DD")
     parser.add_argument("--max-age-hours", type=float, default=36, help="Max report age accepted by postflight QA")
     args = parser.parse_args()
 
@@ -114,15 +115,18 @@ def main() -> int:
         postflight_cmd = [
             sys.executable,
             "scripts/check_latest_run.py",
-            "--require-today",
             "--max-age-hours",
             str(args.max_age_hours),
         ]
+        if args.review_date:
+            postflight_cmd.extend(["--review-date", args.review_date])
         if not args.no_fetch_market:
             postflight_cmd.append("--require-market-sources")
         commands.append(postflight_cmd)
         if args.notify:
             notify_cmd = [sys.executable, "scripts/notify_daily_review.py", "--send"]
+            if args.review_date:
+                notify_cmd.extend(["--review-date", args.review_date])
             if not args.no_fetch_market:
                 notify_cmd.append("--require-market-sources")
             commands.append(notify_cmd)
@@ -149,6 +153,7 @@ def main() -> int:
         "finished_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "log_file": str(log_file),
         "notification_requested": bool(args.notify),
+        "review_date": str(args.review_date or ""),
         "commands": results,
     }
     _write_summary(summary_path, payload)
