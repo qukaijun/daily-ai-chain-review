@@ -1,0 +1,21 @@
+[
+  {
+    "id": "research-YYYYMMDD-001",
+    "title": "券商研报标题或核心结论",
+    "source_type": "broker_research",
+    "source_name": "券商名称/分析师/报告标题",
+    "published_at": "YYYY-MM-DD HH:MM:SS",
+    "chain_segments": ["optical_modules"],
+    "direction": "positive",
+    "weight": 3,
+    "summary": "用自己的话摘要研报观点，不粘贴大段原文。说明产业链环节、核心假设和影响路径。",
+    "affected_stocks": ["300308", "300502"],
+    "bull_case": "看多逻辑：订单、价格、份额、利润率或估值弹性。",
+    "bear_case": "反方风险：证据不足、价格已反映、竞争或交付风险。",
+    "required_confirmation": "需要公告、财报、调研纪要、订单数据或多家研报交叉验证。",
+    "source_url": "",
+    "analyst": "",
+    "broker": "",
+    "copyright_note": "仅存摘要和结构化字段，不存研报全文。"
+  }
+]

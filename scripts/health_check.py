@@ -17,6 +17,9 @@ REQUIRED_FILES = [
     "templates/chartjs.min.js",
     "industry_chain/stock_pool.json",
     "data_sources/events/sample_events.json",
+    "data_sources/_templates/research_report_event.template.json",
+    "data_sources/_templates/xiaozuowen_event.template.json",
+    "data_sources/_templates/announcement_event.template.json",
     "requirements.txt",
 ]
 REQUIRED_MODULES = ["json", "pathlib"]

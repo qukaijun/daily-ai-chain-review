@@ -21,7 +21,7 @@ active
 
 ## Next Action
 
-推进下一阶段：增加研报摘要导入模板、小作文验证池模板、公告/交易所文件索引。
+推进下一阶段：增加真实公告/交易所文件抓取或导入索引、研报摘要批量导入助手、小作文验证状态追踪。
 
 ## Verification
 
@@ -30,3 +30,5 @@ active
 - `python main.py` 已生成首版 HTML 和分析 JSON。
 - `python scripts/screenshot_report.py` 已生成浏览器截图，报告与 Chart.js 均被本地 HTTP 服务成功加载。
 - GitHub 仓库已创建并推送：`https://github.com/qukaijun/daily-ai-chain-review`
+- 已增加 `data_sources/_templates/`、`data_sources/announcements/` 与 `scripts/validate_events.py`。
+- `python scripts/validate_events.py` 通过，模板未污染真实事件加载。

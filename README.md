@@ -50,6 +50,23 @@ output_files/
 
 本工具只做研究辅助和复盘，不构成投资建议。
 
+## 导入研报/小作文/公告
+
+模板在：
+
+```text
+data_sources/_templates/
+```
+
+复制模板到对应目录后运行：
+
+```powershell
+python scripts/validate_events.py
+python main.py
+```
+
+具体规则见 `docs/data-import-guide.md`。
+
 ## Roadmap
 
 1. 复制并清理大盘日报工程底座。

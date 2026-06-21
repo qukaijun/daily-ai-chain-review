@@ -1,0 +1,20 @@
+[
+  {
+    "id": "announcement-YYYYMMDD-001",
+    "title": "公司公告/交易所文件标题",
+    "source_type": "company_announcement",
+    "source_name": "交易所/公司公告",
+    "published_at": "YYYY-MM-DD HH:MM:SS",
+    "chain_segments": ["ai_applications"],
+    "direction": "positive",
+    "weight": 5,
+    "summary": "公告事实摘要：金额、客户、产品、期间、约束条件。",
+    "affected_stocks": ["688111"],
+    "bull_case": "直接经营影响：收入、利润、现金流、订单兑现或份额提升。",
+    "bear_case": "风险：金额小、确认周期长、毛利率不明、一次性收入或仍需验收。",
+    "required_confirmation": "后续财报收入确认、订单执行、毛利率、现金流和管理层说明。",
+    "source_url": "",
+    "announcement_id": "",
+    "model_update_candidate": true
+  }
+]

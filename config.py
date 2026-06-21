@@ -15,6 +15,8 @@ DATA_SOURCES_DIR = ROOT / "data_sources"
 EVENTS_DIR = DATA_SOURCES_DIR / "events"
 RESEARCH_REPORTS_DIR = DATA_SOURCES_DIR / "research_reports"
 RUMORS_DIR = DATA_SOURCES_DIR / "rumors"
+ANNOUNCEMENTS_DIR = DATA_SOURCES_DIR / "announcements"
+TEMPLATES_DIR = DATA_SOURCES_DIR / "_templates"
 INDUSTRY_CHAIN_DIR = ROOT / "industry_chain"
 
 PROJECT_NAME = "每日AI产业链复盘"

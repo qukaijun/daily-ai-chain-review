@@ -7,10 +7,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from config import EVENTS_DIR, RUMORS_DIR, RESEARCH_REPORTS_DIR
+from config import ANNOUNCEMENTS_DIR, EVENTS_DIR, RUMORS_DIR, RESEARCH_REPORTS_DIR
 
 
-EVENT_DIRS = [EVENTS_DIR, RESEARCH_REPORTS_DIR, RUMORS_DIR]
+EVENT_DIRS = [EVENTS_DIR, RESEARCH_REPORTS_DIR, RUMORS_DIR, ANNOUNCEMENTS_DIR]
 
 
 def _read_json(path: Path) -> list[dict[str, Any]]:
@@ -35,6 +35,7 @@ def load_events() -> list[dict[str, Any]]:
                 if event_id in seen_ids:
                     continue
                 item["_source_file"] = path.relative_to(path.parents[2]).as_posix()
+                item.setdefault("source_bucket", directory.name)
                 events.append(item)
                 seen_ids.add(event_id)
     return events
