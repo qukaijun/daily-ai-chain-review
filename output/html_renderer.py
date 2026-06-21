@@ -184,6 +184,28 @@ def _multi_agent_cards(multi_agent: dict[str, Any]) -> str:
     if not isinstance(roles, list) or not roles:
         return '<div class="empty">暂无多角色分析</div>'
     cards = []
+    status = multi_agent.get("deep_agent_status", {}) if isinstance(multi_agent, dict) else {}
+    if isinstance(status, dict):
+        mode = str(multi_agent.get("mode") or status.get("mode") or "")
+        state = str(status.get("status") or "")
+        provider = str(status.get("provider") or "")
+        model = str(status.get("model") or "")
+        error = str(status.get("error") or "")
+        label = {
+            "ok": "LLM深度版已启用",
+            "failed": "LLM深度版失败，已降级",
+            "no_key": "LLM深度版未配置密钥，已降级",
+            "not_requested": "本地确定性多角色层",
+        }.get(state, state or "本地确定性多角色层")
+        error_html = f'<div class="agent-status-error">{_esc(error)}</div>' if error else ""
+        cards.append(
+            '<div class="agent-card agent-status">'
+            '<div class="agent-role">多角色模式</div>'
+            f'<div class="agent-stance">{_esc(label)}</div>'
+            f'<p>mode={_esc(mode)} provider={_esc(provider)} model={_esc(model)}</p>'
+            f'{error_html}'
+            "</div>"
+        )
     for role in roles:
         if not isinstance(role, dict):
             continue

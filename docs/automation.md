@@ -21,9 +21,10 @@ python scripts/run_daily_review.py
 3. `scripts/validate_verifications.py`
 4. `scripts/check_secrets.py`
 5. `scripts/check_multi_agent_layer.py`
-6. `scripts/check_verification_clusters.py`
-7. `main.py --fetch-market`
-8. `scripts/check_latest_run.py --require-today --require-market-sources`
+6. `scripts/check_deep_agent_config.py`
+7. `scripts/check_verification_clusters.py`
+8. `main.py --fetch-market`
+9. `scripts/check_latest_run.py --require-today --require-market-sources`
 
 日志和运行摘要写入：
 
@@ -70,6 +71,15 @@ powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1 -At "19:
 powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1 -NoFetchMarket
 ```
 
+启用可选 LLM 深度多角色复盘：
+
+```powershell
+python scripts/run_daily_review.py --deep-agents
+powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1 -DeepAgents
+```
+
+如果未配置 `DAA_LLM_API_KEY`，系统会自动降级为本地确定性多角色层。日常健康检查不会真实调用 LLM；只有 `python scripts/check_deep_agent_config.py --live` 会测试真实模型调用。
+
 ## Codex 定时器
 
 推荐把 Codex 定时器作为通知和异常诊断层：
@@ -78,6 +88,7 @@ powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1 -NoFetch
 - 成功时报告最新 HTML 路径和 provider 状态；
 - 失败时先读取 `output_files/daily_runs/latest_run.json` 和日志定位问题；
 - 不打印 API key，不提交 `output_files/` 运行产物。
+- 默认不启用 LLM 深度复盘；如需启用，在自动化 prompt 或脚本参数中显式加入 `--deep-agents`。
 
 ## 治理规则
 
@@ -85,3 +96,4 @@ powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1 -NoFetch
 - 自动数据源的新闻、研报、传闻只进入事件层或验证池。
 - 只有公告、交易所文件、财报等高等级证据在人工复核后才可进入核心假设复核。
 - 每次自动运行必须留下日志、运行摘要和可巡检产物。
+- LLM 深度多角色复盘只增强研究解释，不改变证据等级、验证状态或核心假设。

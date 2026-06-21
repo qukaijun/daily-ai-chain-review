@@ -166,6 +166,9 @@ LLM_CONFIG = {
     "base_url": _env("DAA_LLM_BASE_URL", "https://api.openai.com/v1"),
     "deep_model": _env("DAA_DEEP_MODEL", "gpt-4o"),
     "quick_model": _env("DAA_QUICK_MODEL", "gpt-4o-mini"),
+    "enable_deep_agents": _env("DAA_ENABLE_DEEP_AGENTS", "0") == "1",
+    "timeout_seconds": int(_env("DAA_LLM_TIMEOUT_SECONDS", "45") or 45),
+    "max_tokens": int(_env("DAA_LLM_MAX_TOKENS", "2200") or 2200),
 }
 
 SEARCH_CONFIG = {

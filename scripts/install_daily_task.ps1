@@ -2,7 +2,8 @@
 param(
     [string]$TaskName = "Daily AI Chain Review",
     [string]$At = "18:30",
-    [switch]$NoFetchMarket
+    [switch]$NoFetchMarket,
+    [switch]$DeepAgents
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,6 +18,9 @@ if (-not $PythonCommand) {
 $Arguments = "`"$Runner`""
 if ($NoFetchMarket) {
     $Arguments = "$Arguments --no-fetch-market"
+}
+if ($DeepAgents) {
+    $Arguments = "$Arguments --deep-agents"
 }
 
 $Action = New-ScheduledTaskAction -Execute $PythonCommand.Source -Argument $Arguments -WorkingDirectory $RepoRoot

@@ -15,7 +15,7 @@ from graph.event_impact_engine import analyze_events  # noqa: E402
 
 def main() -> int:
     events = load_events()
-    analysis = analyze_events(events)
+    analysis = analyze_events(events, enable_deep_agents=False)
     verification = analysis.get("verification_analysis", {})
     clusters = verification.get("clusters", [])
 

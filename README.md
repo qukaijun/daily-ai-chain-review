@@ -31,6 +31,7 @@ data_sources/events/sample_events.json
 pip install -r requirements.txt
 python main.py
 python main.py --fetch-market
+python main.py --fetch-market --deep-agents
 python scripts/health_check.py
 python scripts/run_daily_review.py
 ```
@@ -109,6 +110,14 @@ python scripts/run_daily_review.py
 
 脚本会执行健康检查、事件校验、验证写回校验、密钥泄露扫描、多角色层检查、自动验证聚类检查、`main.py --fetch-market` 和最新产物巡检。日志写入 `output_files/daily_runs/`。
 
+如需启用可选 LLM 深度多角色复盘：
+
+```powershell
+python scripts/run_daily_review.py --deep-agents
+```
+
+未配置 `DAA_LLM_API_KEY` 时会自动降级为本地确定性多角色层。
+
 安装 Windows 交易日计划任务：
 
 ```powershell
@@ -142,5 +151,6 @@ python scripts/check_search_config.py
 3. 实现事件影响引擎 MVP。
 4. 接入研报、小作文、公告的文件导入。
 5. 改造 HTML 页面为产业链热力图、事件表、个股影响矩阵。
-6. 已加入本地确定性的 TradingAgents 式多角色分析；后续可扩展为 LLM 深度版。
+6. 已加入本地确定性的 TradingAgents 式多角色分析，并可显式启用 LLM 深度版。
 7. 已加入每日自动生成脚本、最新产物巡检和 Windows 计划任务安装脚本。
+8. 已加入可选 LLM 深度多角色复盘，默认关闭，失败自动降级。

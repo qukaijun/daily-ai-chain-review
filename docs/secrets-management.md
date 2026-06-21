@@ -22,8 +22,17 @@ python scripts/check_search_config.py
 PERPLEXITY_API_KEY=...
 PERPLEXITY_BASE_URL=https://api.perplexity.ai
 PERPLEXITY_MODEL=sonar
+
+DAA_LLM_API_KEY=...
+DAA_LLM_BASE_URL=https://api.openai.com/v1
+DAA_DEEP_MODEL=gpt-4o
+DAA_ENABLE_DEEP_AGENTS=0
+DAA_LLM_TIMEOUT_SECONDS=45
+DAA_LLM_MAX_TOKENS=2200
 ```
 
 ## 检查
 
 `scripts/check_search_config.py` 只显示 key 是否存在、长度和脱敏片段，不打印完整 key。
+
+`scripts/check_deep_agent_config.py` 只检查深度多角色配置和降级路径，不打印完整 key；默认不会真实调用 LLM。只有显式运行 `python scripts/check_deep_agent_config.py --live` 才允许一次真实深度模型调用。

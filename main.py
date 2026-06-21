@@ -41,6 +41,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Daily AI Chain Review")
     parser.add_argument("--output", type=str, default=None, help="Output HTML path")
     parser.add_argument("--fetch-market", action="store_true", help="Fetch managed market/news data sources")
+    parser.add_argument("--deep-agents", action="store_true", help="Enable optional LLM deep multi-agent review")
     args = parser.parse_args()
 
     print("=" * 60)
@@ -72,7 +73,7 @@ def main() -> int:
     if not events:
         print("[WARN] No events found. Add JSON files to data_sources/events.")
 
-    analysis = analyze_events(events)
+    analysis = analyze_events(events, enable_deep_agents=True if args.deep_agents else None)
     analysis["verification_update_status"] = verification_status
     if args.fetch_market:
         analysis["data_source_status"] = source_data.get("source_status", [])

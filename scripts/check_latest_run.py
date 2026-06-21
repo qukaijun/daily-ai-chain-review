@@ -101,7 +101,7 @@ def main() -> int:
     analysis_path = _latest("analysis_*.json")
     analysis_token = _token(analysis_path)
     report_path = _match_file("report_full_", analysis_token, ".html") or _latest("report_full_*.html")
-    market_path = _match_file("market_sources_", analysis_token, ".json") or _latest("market_sources_*.json")
+    market_path = _match_file("market_sources_", analysis_token, ".json")
     analysis = _read_json(analysis_path)
     market_data = _read_json(market_path)
 
@@ -136,10 +136,17 @@ def main() -> int:
         issues.append(f"event_count {event_count} below minimum {args.min_events}")
 
     roles = analysis.get("multi_agent_analysis", {}).get("roles", [])
+    multi_agent = analysis.get("multi_agent_analysis", {})
+    deep_status = multi_agent.get("deep_agent_status", {}) if isinstance(multi_agent, dict) else {}
     role_count = len(roles) if isinstance(roles, list) else 0
+    print(f"[INFO] multi_agent_mode={multi_agent.get('mode') if isinstance(multi_agent, dict) else ''}")
     print(f"[INFO] multi_agent_roles={role_count}")
+    if isinstance(deep_status, dict):
+        print(f"[INFO] deep_agent_status={deep_status.get('status', '')}")
     if role_count < 5:
         issues.append("multi_agent_analysis has fewer than 5 roles")
+    if isinstance(multi_agent, dict) and not isinstance(deep_status, dict):
+        issues.append("multi_agent_analysis missing deep_agent_status")
 
     clusters = analysis.get("verification_analysis", {}).get("clusters", [])
     cluster_count = len(clusters) if isinstance(clusters, list) else 0

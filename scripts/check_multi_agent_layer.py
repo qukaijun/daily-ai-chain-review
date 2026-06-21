@@ -14,7 +14,7 @@ from graph.event_impact_engine import analyze_events  # noqa: E402
 
 
 def main() -> int:
-    analysis = analyze_events(load_events())
+    analysis = analyze_events(load_events(), enable_deep_agents=False)
     multi_agent = analysis.get("multi_agent_analysis", {})
     roles = multi_agent.get("roles", [])
 

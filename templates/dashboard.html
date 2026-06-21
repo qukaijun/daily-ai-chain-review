@@ -76,8 +76,10 @@ a:hover{text-decoration:underline}
 .agent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
 .agent-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
 .agent-card.consensus{border-left:4px solid var(--accent)}
+.agent-card.agent-status{background:#F6FAFA;border-left:4px solid var(--accent)}
 .agent-role{font-size:13px;color:var(--text-muted);font-weight:700;margin-bottom:6px}
 .agent-stance{font-size:16px;font-weight:800;margin-bottom:10px}
+.agent-status-error{margin-top:8px;color:var(--warn);font-size:12px;line-height:1.6}
 .agent-block{margin-top:10px;color:var(--text-body);font-size:12px;line-height:1.6}
 .agent-block strong{display:block;color:var(--text-primary);font-size:12px;margin-bottom:4px}
 .agent-block ul,.agent-card ul{margin-left:18px}
@@ -163,7 +165,7 @@ a:hover{text-decoration:underline}
 
     <section class="section">
       <h2>多角色复盘</h2>
-      <div class="section-sub">模拟 TradingAgents 的角色分工，从事件、公告、产业链、风险和总结五个视角生成复盘意见；不输出自动交易建议。</div>
+      <div class="section-sub">模拟 TradingAgents 的角色分工，从事件、公告、产业链、风险和总结五个视角生成复盘意见；默认本地确定性生成，可选 LLM 深度版，不输出自动交易建议。</div>
       <div class="agent-grid">{{MULTI_AGENT_CARDS}}</div>
     </section>
 

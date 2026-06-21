@@ -200,3 +200,14 @@ python scripts/check_search_config.py
 巡检只判断报告是否可用，不把自动新闻、研报或传闻升级为事实确认。Perplexity 未配置时会记录为 `empty`，只要仍有其他 provider 可用，不阻断日报生成。
 
 Windows 计划任务安装脚本见 `scripts/install_daily_task.ps1`，详细说明见 `docs/automation.md`。
+
+## 可选 LLM 深度多角色复盘
+
+默认报告使用本地确定性多角色层。需要更深入的复盘解释时，可以显式启用：
+
+```powershell
+python main.py --fetch-market --deep-agents
+python scripts/run_daily_review.py --deep-agents
+```
+
+深度版通过 OpenAI-compatible Chat Completions 接口读取已结构化的分析摘要，只输出五类角色卡片和一致结论，不改写事件、验证状态、证据等级或估值模型。若未配置 `DAA_LLM_API_KEY` 或调用失败，会自动降级为本地确定性层，并在 HTML 的“多角色模式”卡片中显示状态。

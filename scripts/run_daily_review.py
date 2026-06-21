@@ -79,6 +79,7 @@ def main() -> int:
     parser.add_argument("--no-fetch-market", action="store_true", help="Generate report from local files only")
     parser.add_argument("--skip-preflight", action="store_true", help="Skip input and project health checks")
     parser.add_argument("--skip-postflight", action="store_true", help="Skip latest report QA")
+    parser.add_argument("--deep-agents", action="store_true", help="Enable optional LLM deep multi-agent review")
     parser.add_argument("--max-age-hours", type=float, default=36, help="Max report age accepted by postflight QA")
     args = parser.parse_args()
 
@@ -96,6 +97,7 @@ def main() -> int:
                 [sys.executable, "scripts/validate_verifications.py"],
                 [sys.executable, "scripts/check_secrets.py"],
                 [sys.executable, "scripts/check_multi_agent_layer.py"],
+                [sys.executable, "scripts/check_deep_agent_config.py"],
                 [sys.executable, "scripts/check_verification_clusters.py"],
             ]
         )
@@ -103,6 +105,8 @@ def main() -> int:
     main_cmd = [sys.executable, "main.py"]
     if not args.no_fetch_market:
         main_cmd.append("--fetch-market")
+    if args.deep_agents:
+        main_cmd.append("--deep-agents")
     commands.append(main_cmd)
 
     if not args.skip_postflight:

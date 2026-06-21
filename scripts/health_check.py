@@ -30,6 +30,7 @@ REQUIRED_FILES = [
     "scripts/check_data_sources.py",
     "scripts/check_announcement_provider.py",
     "scripts/check_multi_agent_layer.py",
+    "scripts/check_deep_agent_config.py",
     "scripts/check_verification_clusters.py",
     "scripts/check_latest_run.py",
     "scripts/run_daily_review.py",

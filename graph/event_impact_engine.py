@@ -199,7 +199,12 @@ def _upgrade_cluster_for_high_evidence(verification_analysis: dict[str, Any], si
         break
 
 
-def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | None = None) -> dict[str, Any]:
+def analyze_events(
+    events: list[dict[str, Any]],
+    stock_pool: dict[str, Any] | None = None,
+    *,
+    enable_deep_agents: bool | None = None,
+) -> dict[str, Any]:
     pool = stock_pool or load_stock_pool()
     stock_lookup = _stock_lookup(pool)
     stock_segments = _segment_lookup(pool)
@@ -352,5 +357,5 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
         },
         "stock_pool": pool,
     }
-    result["multi_agent_analysis"] = build_multi_agent_analysis(result)
+    result["multi_agent_analysis"] = build_multi_agent_analysis(result, enable_deep=enable_deep_agents)
     return result
