@@ -257,10 +257,21 @@ def _provider_direction(provider: str, item: dict[str, Any], text: str) -> str:
     return "unknown"
 
 
+def _announcement_bull_case(item: dict[str, Any]) -> str:
+    checklist = _as_list(item.get("review_checklist"))
+    if checklist:
+        return "公告为高等级证据候选；完成复核清单后，可判断是否提升对应产业链环节的跟踪优先级。"
+    return "公告为高等级证据候选；复核原文后可辅助判断事件真实性和经营影响。"
+
+
+def _announcement_bear_case(item: dict[str, Any]) -> str:
+    return "公告标题或正文摘要不等于投资结论；需核对金额、期间、会计确认口径和与原事件的直接相关性。"
+
+
 def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> dict[str, Any] | None:
     text = " ".join(
         str(item.get(key, ""))
-        for key in ("title", "content", "summary", "impact_reason")
+        for key in ("title", "content", "summary", "impact_reason", "content_excerpt")
         if item.get(key)
     )
     code = str(item.get("code") or "").strip()
@@ -270,7 +281,7 @@ def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> 
         return None
 
     structured_segments = [str(x) for x in _as_list(item.get("chain_segments")) if str(x)]
-    segments = structured_segments or _match_segments(text) or stock_segments
+    segments = structured_segments or (stock_segments if is_ai_stock_announcement else _match_segments(text))
     if not segments:
         segments = ["cloud_models"]
     related_companies = " ".join(str(x) for x in _as_list(item.get("related_companies")))
@@ -283,9 +294,10 @@ def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> 
     citations = _as_list(item.get("citations"))
     search_results = _as_list(item.get("search_results"))
     source_url = _first_url(item.get("url"), item.get("source_url"), citations, search_results)
+    is_announcement = "announcement" in provider
     required_confirmation = str(item.get("required_confirmation") or "")
     if not required_confirmation:
-        if "announcement" in provider:
+        if is_announcement:
             required_confirmation = "人工复核公告原文、公告类型、金额、期间、约束条件和会计确认口径。"
         else:
             required_confirmation = "等待公司公告、交易所文件、财报、调研纪要或多家可靠来源交叉确认。"
@@ -299,15 +311,15 @@ def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> 
         "chain_segments": segments,
         "direction": _provider_direction(provider, item, text),
         "weight": _provider_weight(provider, bool(item.get("structured"))),
-        "summary": str(item.get("summary") or text)[:800],
+        "summary": str(item.get("summary") or item.get("content_excerpt") or text)[:800],
         "affected_stocks": affected,
         "bull_case": str(
             item.get("bull_case")
-            or "若后续由公告、财报、订单或多家来源交叉验证，可提高对应产业链环节的跟踪优先级。"
+            or (_announcement_bull_case(item) if is_announcement else "若后续由公告、财报、订单或多家来源交叉验证，可提高对应产业链环节的跟踪优先级。")
         ),
         "bear_case": str(
             item.get("bear_case")
-            or "该事件来自新闻/搜索/快讯，证据等级有限，不能单独改变核心业绩假设。"
+            or (_announcement_bear_case(item) if is_announcement else "该事件来自新闻/搜索/快讯，证据等级有限，不能单独改变核心业绩假设。")
         ),
         "required_confirmation": required_confirmation,
         "source_url": source_url,
@@ -323,4 +335,10 @@ def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> 
             else "自动数据源生成，等待人工复核。"
         ),
         "announcement_type": str(item.get("announcement_type") or ""),
+        "art_code": str(item.get("art_code") or ""),
+        "pdf_url": str(item.get("pdf_url") or ""),
+        "detail_status": str(item.get("detail_status") or ""),
+        "detail_error": str(item.get("detail_error") or ""),
+        "fact_markers": item.get("fact_markers") if isinstance(item.get("fact_markers"), dict) else {},
+        "review_checklist": [str(x) for x in _as_list(item.get("review_checklist"))],
     }

@@ -41,10 +41,30 @@ def _status_tag_class(status: str) -> str:
 
 
 def _source_link(event: dict[str, Any]) -> str:
-    url = str(event.get("source_url") or "").strip()
+    url = str(event.get("pdf_url") or event.get("source_url") or "").strip()
     if not url:
         return ""
-    return f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">来源</a>'
+    label = "PDF" if event.get("pdf_url") else "来源"
+    return f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">{label}</a>'
+
+
+def _fact_markers_text(markers: Any) -> str:
+    if not isinstance(markers, dict):
+        return ""
+    parts = []
+    labels = {"money": "金额", "percentages": "比例", "dates": "日期"}
+    for key in ("money", "percentages", "dates"):
+        values = markers.get(key, [])
+        if isinstance(values, list) and values:
+            parts.append(f"{labels[key]}：" + "、".join(str(v) for v in values[:4]))
+    return "；".join(parts)
+
+
+def _review_checklist_html(items: Any) -> str:
+    if not isinstance(items, list) or not items:
+        return ""
+    lis = "".join(f"<li>{_esc(item)}</li>" for item in items[:5])
+    return f'<ul class="review-checklist">{lis}</ul>'
 
 
 def _upgrade_evidence_note(event: dict[str, Any]) -> str:
@@ -58,10 +78,20 @@ def _upgrade_evidence_note(event: dict[str, Any]) -> str:
         title = _esc(item.get("title", "公告候选"))
         url = str(item.get("source_url") or "").strip()
         if url:
-            links.append(f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">{title}</a>')
+            pdf_url = str(item.get("pdf_url") or "").strip()
+            pdf = f' <a href="{_esc(pdf_url)}" target="_blank" rel="noopener noreferrer">PDF</a>' if pdf_url else ""
+            links.append(f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">{title}</a>{pdf}')
         else:
             links.append(title)
-    return '<div class="upgrade-evidence">公告候选：' + "；".join(links) + "</div>"
+    checklist = []
+    first = evidence[0] if isinstance(evidence[0], dict) else {}
+    fact_note = _fact_markers_text(first.get("fact_markers", {}))
+    review = _review_checklist_html(first.get("review_checklist", []))
+    if fact_note:
+        checklist.append(f'<div class="fact-markers">{_esc(fact_note)}</div>')
+    if review:
+        checklist.append(review)
+    return '<div class="upgrade-evidence">公告候选：' + "；".join(links) + "".join(checklist) + "</div>"
 
 
 def _events_rows(events: list[dict[str, Any]]) -> str:
@@ -168,6 +198,9 @@ def _verification_cards(events: list[dict[str, Any]]) -> str:
         status = str(event.get("verification_status") or "pending")
         source_link = _source_link(event)
         citation_note = str(event.get("citation_note") or "")
+        fact_note = _fact_markers_text(event.get("fact_markers", {}))
+        fact_html = f'<div class="fact-markers">{_esc(fact_note)}</div>' if fact_note else ""
+        review = _review_checklist_html(event.get("review_checklist", []))
         cards.append(
             '<div class="verification-card">'
             f'<div class="card-top"><span class="tag tag-warn">{_esc(quality.get("tier"))}</span>'
@@ -177,6 +210,8 @@ def _verification_cards(events: list[dict[str, Any]]) -> str:
             f'<p>{_esc(event.get("summary"))}</p>'
             f'<div class="verify-action">验证：{_esc(event.get("required_confirmation"))}</div>'
             f'<div class="verify-policy">{_esc(event.get("verification_policy_note", ""))}</div>'
+            f'{fact_html}'
+            f'{review}'
             f'{_upgrade_evidence_note(event)}'
             f'<div class="source-note">{source_link} {_esc(citation_note[:240])}</div>'
             "</div>"

@@ -116,6 +116,10 @@ def _build_announcement_evidence(events: list[dict[str, Any]]) -> dict[str, list
                     "source_type": event.get("source_type", ""),
                     "source_url": event.get("source_url", ""),
                     "announcement_type": event.get("announcement_type", ""),
+                    "pdf_url": event.get("pdf_url", ""),
+                    "detail_status": event.get("detail_status", ""),
+                    "fact_markers": event.get("fact_markers", {}),
+                    "review_checklist": event.get("review_checklist", []),
                 }
             )
     return evidence

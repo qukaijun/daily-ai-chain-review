@@ -17,6 +17,7 @@ from graph.event_impact_engine import load_stock_pool
 
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+ANNOUNCEMENT_DETAIL_URL = "https://np-cnotice-stock.eastmoney.com/api/content/ann"
 
 PERPLEXITY_EVENT_SCHEMA = {
     "type": "object",
@@ -258,6 +259,116 @@ class DataSourceManager:
                     codes.add(code)
         return codes
 
+    def _announcement_code_from_url(self, url: str) -> str:
+        match = re.search(r"/(AN\d+)\.html", url)
+        return match.group(1) if match else ""
+
+    def _parse_response_json(self, text: str) -> dict[str, Any]:
+        payload = text.strip()
+        if not payload:
+            return {}
+        if not payload.startswith("{"):
+            match = re.search(r"^[^(]+\((.*)\)\s*;?$", payload, re.S)
+            if match:
+                payload = match.group(1)
+        try:
+            data = json.loads(payload)
+        except Exception:
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def _extract_fact_markers(self, text: str) -> dict[str, Any]:
+        compact = re.sub(r"\s+", " ", text or "").strip()
+        money = re.findall(r"(?:人民币)?\d+(?:\.\d+)?\s*(?:亿元|万元|元|港元|美元)", compact)
+        percentages = re.findall(r"\d+(?:\.\d+)?\s*%", compact)
+        dates = re.findall(r"\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|\d{4}-\d{1,2}-\d{1,2}", compact)
+        return {
+            "money": money[:8],
+            "percentages": percentages[:8],
+            "dates": dates[:8],
+        }
+
+    def _review_checklist(self, announcement_type: str, text: str) -> list[str]:
+        base = [
+            "核对公告原文与PDF链接是否一致",
+            "核对公告日期、主体公司和证券代码",
+            "判断是否与待验证事件存在直接关系",
+        ]
+        mapping = [
+            (["回购"], ["核对回购金额区间、资金来源、用途和实施期限", "核对是否已实施而非仅为预案"]),
+            (["股权激励"], ["核对授予对象、考核条件、摊销费用和稀释影响"]),
+            (["中标", "合同", "订单"], ["核对合同金额、客户、产品、交付周期和收入确认条件"]),
+            (["投资"], ["核对投资金额、项目周期、产能规划和资金来源"]),
+            (["业绩"], ["核对利润口径、非经常损益和同比基数"]),
+            (["风险", "诉讼", "处罚", "退市"], ["核对风险事项金额、进展阶段、可能损失和整改要求"]),
+            (["减持", "增持"], ["核对股东身份、数量区间、价格条件和实施期限"]),
+            (["质押", "冻结"], ["核对质押/冻结比例、到期日、平仓风险和解除条件"]),
+        ]
+        combined = f"{announcement_type} {text[:200]}"
+        tasks = list(base)
+        for keywords, additions in mapping:
+            if any(keyword in combined for keyword in keywords):
+                tasks.extend(additions)
+        tasks.append("人工判断是否允许从公告候选升级为已验证证据")
+        return tasks[:8]
+
+    def _fetch_announcement_detail(self, art_code: str, referer: str) -> dict[str, Any]:
+        if not art_code:
+            return {"detail_status": "missing_art_code"}
+        max_pages = max(int(ANNOUNCEMENT_CONFIG.get("detail_max_pages", 3)), 1)
+        contents: list[str] = []
+        first_data: dict[str, Any] = {}
+        errors: list[str] = []
+        pages = 1
+        for page_index in range(1, max_pages + 1):
+            try:
+                response = requests.get(
+                    ANNOUNCEMENT_DETAIL_URL,
+                    params={"art_code": art_code, "client_source": "web", "page_index": page_index},
+                    headers={"User-Agent": UA, "Referer": referer or "https://data.eastmoney.com/"},
+                    timeout=15,
+                )
+                if response.status_code >= 400:
+                    errors.append(f"HTTP {response.status_code}")
+                    break
+                payload = self._parse_response_json(response.text)
+                data = payload.get("data", {}) if isinstance(payload.get("data"), dict) else {}
+                if not data:
+                    errors.append("empty data")
+                    break
+                if not first_data:
+                    first_data = data
+                    try:
+                        pages = int(data.get("page_size") or 1)
+                    except Exception:
+                        pages = 1
+                content = str(data.get("notice_content") or "").strip()
+                if content:
+                    contents.append(content)
+                if page_index >= min(pages, max_pages):
+                    break
+            except Exception as exc:
+                errors.append(str(exc)[:120])
+                break
+
+        full_text = "\n".join(contents).strip()
+        if not first_data:
+            return {"detail_status": "failed", "detail_error": "；".join(errors[:2])}
+        fact_markers = self._extract_fact_markers(full_text)
+        return {
+            "detail_status": "ok" if full_text else "empty",
+            "art_code": art_code,
+            "notice_title": first_data.get("notice_title", ""),
+            "notice_date": first_data.get("notice_date", ""),
+            "pdf_url": first_data.get("attach_url_web") or first_data.get("attach_url") or "",
+            "attach_type": first_data.get("attach_type", ""),
+            "page_size": pages,
+            "detail_pages_fetched": len(contents),
+            "content_excerpt": full_text[:1200],
+            "fact_markers": fact_markers,
+            "detail_error": "；".join(errors[:2]),
+        }
+
     def _akshare_announcements(self) -> dict[str, Any]:
         import akshare as ak
 
@@ -266,9 +377,12 @@ class DataSourceManager:
         ai_codes = self._ai_stock_codes()
         lookback_days = max(int(ANNOUNCEMENT_CONFIG.get("lookback_days", 3)), 1)
         max_items = max(int(ANNOUNCEMENT_CONFIG.get("max_items", 80)), 1)
+        fetch_detail = bool(ANNOUNCEMENT_CONFIG.get("fetch_detail", True))
+        detail_max_items = max(int(ANNOUNCEMENT_CONFIG.get("detail_max_items", 12)), 0)
         items: list[dict[str, Any]] = []
         seen_urls: set[str] = set()
         fetch_errors: list[str] = []
+        detail_count = 0
 
         for offset in range(lookback_days):
             day = datetime.now() - timedelta(days=offset)
@@ -292,18 +406,26 @@ class DataSourceManager:
                     continue
                 if url:
                     seen_urls.add(url)
-                items.append(
-                    {
-                        "title": title,
-                        "time": str(row.get("公告日期", date_text)),
-                        "source": "东方财富公告大全",
-                        "code": code,
-                        "name": str(row.get("名称", "")).strip(),
-                        "announcement_type": announce_type,
-                        "url": url,
-                        "date": date_text,
-                    }
-                )
+                item = {
+                    "title": title,
+                    "time": str(row.get("公告日期", date_text)),
+                    "source": "东方财富公告大全",
+                    "code": code,
+                    "name": str(row.get("名称", "")).strip(),
+                    "announcement_type": announce_type,
+                    "url": url,
+                    "date": date_text,
+                }
+                items.append(item)
+                if fetch_detail and detail_count < detail_max_items:
+                    art_code = self._announcement_code_from_url(url)
+                    detail = self._fetch_announcement_detail(art_code, url)
+                    item.update(detail)
+                    item["review_checklist"] = self._review_checklist(
+                        announce_type,
+                        " ".join([title, str(detail.get("content_excerpt", ""))]),
+                    )
+                    detail_count += 1
                 if len(items) >= max_items:
                     break
             if len(items) >= max_items:
@@ -314,6 +436,8 @@ class DataSourceManager:
             "items": items,
             "lookback_days": lookback_days,
             "max_items": max_items,
+            "detail_count": detail_count,
+            "detail_max_items": detail_max_items,
             "source": "akshare.stock_notice_report",
         }
         if fetch_errors:

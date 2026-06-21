@@ -69,7 +69,19 @@ python main.py --fetch-market
 - 输出 `company_announcement` 事件，证据层级为 `P0/audit_source`。
 - 默认 `verification_status=not_required`，但仍要求人工复核公告原文、金额、期间和会计确认口径。
 - 若低证据事件命中同一只股票的公告候选，会在验证池里标记为 `已找到公告候选`，但不会自动认定原事件已被验证。
-- 配置项：`DAA_ANNOUNCEMENT_LOOKBACK_DAYS`、`DAA_ANNOUNCEMENT_MAX_ITEMS`。
+- 可抓取公告详情接口，保留 `content_excerpt/pdf_url/fact_markers/review_checklist`。
+- 配置项：`DAA_ANNOUNCEMENT_LOOKBACK_DAYS`、`DAA_ANNOUNCEMENT_MAX_ITEMS`、`DAA_ANNOUNCEMENT_FETCH_DETAIL`、`DAA_ANNOUNCEMENT_DETAIL_MAX_ITEMS`、`DAA_ANNOUNCEMENT_DETAIL_MAX_PAGES`。
+
+## 公告复核清单
+
+公告详情抓取只生成复核辅助字段，不自动形成投资结论：
+
+- `content_excerpt`：公告正文摘要截取，用于快速判断主题；
+- `pdf_url`：公告 PDF 原文链接；
+- `fact_markers`：从正文中提取金额、比例和日期等显性字段；
+- `review_checklist`：人工复核动作，例如核对公告原文、金额、期间、会计确认口径、是否与原低证据事件直接相关。
+
+只有人工确认公告与原事件存在直接关系后，低证据事件才能从“公告候选”进一步转为“已交叉验证”。
 
 ## 密钥加载
 
@@ -108,3 +120,4 @@ python scripts/check_search_config.py
 - provider 失败必须记录，不静默吞掉。
 - 小作文、传闻、搜索增强事件必须保留 `verification_status` 和下一步验证动作。
 - 公告索引只能作为高等级证据候选；是否升级核心假设必须人工核对原文。
+- 公告详情摘要和事实标记只用于复核效率，不替代公告原文。

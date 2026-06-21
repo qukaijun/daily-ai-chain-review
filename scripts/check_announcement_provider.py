@@ -24,8 +24,14 @@ def main() -> int:
     print(f"[{result.status.upper()}] {result.provider} {result.error}")
     print(f"[INFO] items: {len(items)}")
     print(f"[INFO] lookback_days: {data.get('lookback_days', '')}")
+    print(f"[INFO] detail_count: {data.get('detail_count', '')}")
     for item in items[:5]:
         print(f"- {item.get('code', '')} {item.get('name', '')}: {item.get('title', '')}")
+        if item.get("detail_status"):
+            print(f"  detail={item.get('detail_status')} pdf={'yes' if item.get('pdf_url') else 'no'}")
+        checklist = item.get("review_checklist", [])
+        if checklist:
+            print(f"  review: {checklist[0]}")
 
     if result.status != "ok":
         print("[FAIL] announcement provider unavailable")

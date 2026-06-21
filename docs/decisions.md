@@ -16,3 +16,4 @@
 - 小作文、传闻、新闻和搜索增强事件采用验证状态生命周期：`pending/confirmed/rejected/expired/upgraded/not_required`。
 - 公告索引采用 AkShare `stock_notice_report` 拉取东方财富公告大全，命中 AI 股票池或 AI 关键词后作为 `company_announcement` 高等级证据候选。
 - 低证据事件命中同个股公告时只标记“已找到公告候选”，不自动认定原事件已验证，也不自动修改核心假设。
+- 公告详情抓取使用东方财富公告正文接口，保留正文摘要、PDF 链接、金额/比例/日期标记和人工复核清单；这些字段只提升复核效率，不替代人工阅读原文。

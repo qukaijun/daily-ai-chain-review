@@ -151,6 +151,9 @@ DATA_SOURCE_CONFIG = {
 ANNOUNCEMENT_CONFIG = {
     "lookback_days": int(_env("DAA_ANNOUNCEMENT_LOOKBACK_DAYS", "3") or 3),
     "max_items": int(_env("DAA_ANNOUNCEMENT_MAX_ITEMS", "80") or 80),
+    "fetch_detail": _env("DAA_ANNOUNCEMENT_FETCH_DETAIL", "1") != "0",
+    "detail_max_items": int(_env("DAA_ANNOUNCEMENT_DETAIL_MAX_ITEMS", "12") or 12),
+    "detail_max_pages": int(_env("DAA_ANNOUNCEMENT_DETAIL_MAX_PAGES", "3") or 3),
 }
 
 
