@@ -18,6 +18,8 @@ RUMORS_DIR = DATA_SOURCES_DIR / "rumors"
 ANNOUNCEMENTS_DIR = DATA_SOURCES_DIR / "announcements"
 TEMPLATES_DIR = DATA_SOURCES_DIR / "_templates"
 INDUSTRY_CHAIN_DIR = ROOT / "industry_chain"
+CACHE_DIR = ROOT / ".cache"
+CACHE_DIR.mkdir(exist_ok=True)
 
 PROJECT_NAME = "每日AI产业链复盘"
 PROJECT_SLUG = "daily-ai-chain-review"
@@ -37,6 +39,7 @@ SOURCE_WEIGHTS = {
     "rumor": 0.25,
     "xiaozuowen": 0.25,
     "manual": 0.35,
+    "search_api": 0.4,
 }
 
 SOURCE_LABELS = {
@@ -54,6 +57,7 @@ SOURCE_LABELS = {
     "rumor": "传闻",
     "xiaozuowen": "小作文",
     "manual": "手动判断",
+    "search_api": "搜索API",
 }
 
 IMPACT_DIRECTION_SCORES = {
@@ -76,6 +80,18 @@ IMPACT_DIRECTION_LABELS = {
 
 DEFAULT_EVENT_WEIGHT = 3
 
+AI_KEYWORDS = [
+    "AI", "人工智能", "大模型", "算力", "GPU", "英伟达", "NVDA",
+    "光模块", "CPO", "服务器", "液冷", "数据中心", "IDC",
+    "HBM", "先进封装", "机器人", "端侧AI", "AI PC", "AI手机",
+    "Agent", "云计算", "推理", "训练", "芯片",
+]
+
+DATA_SOURCE_CONFIG = {
+    "market_snapshot": ["akshare_market"],
+    "news": ["eastmoney_flash", "akshare_news", "perplexity_search"],
+}
+
 
 LLM_CONFIG = {
     "provider": os.getenv("DAA_LLM_PROVIDER", "openai"),
@@ -83,4 +99,10 @@ LLM_CONFIG = {
     "base_url": os.getenv("DAA_LLM_BASE_URL", "https://api.openai.com/v1"),
     "deep_model": os.getenv("DAA_DEEP_MODEL", "gpt-4o"),
     "quick_model": os.getenv("DAA_QUICK_MODEL", "gpt-4o-mini"),
+}
+
+SEARCH_CONFIG = {
+    "perplexity_api_key": os.getenv("PERPLEXITY_API_KEY", ""),
+    "perplexity_base_url": os.getenv("PERPLEXITY_BASE_URL", "https://api.perplexity.ai"),
+    "perplexity_model": os.getenv("PERPLEXITY_MODEL", "sonar"),
 }

@@ -13,7 +13,9 @@ import json
 from datetime import datetime
 
 from config import OUTPUT_DIR
+from data.ai_event_adapter import events_from_managed_sources
 from data.event_loader import load_events
+from data.providers import DataSourceManager
 from graph.event_impact_engine import analyze_events
 from output.html_renderer import render_report
 
@@ -26,9 +28,18 @@ def save_analysis(analysis: dict) -> str:
     return str(path)
 
 
+def save_market_sources(data: dict) -> str:
+    path = OUTPUT_DIR / f"market_sources_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with path.open("w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+    print(f"[File] Source data saved: {path}")
+    return str(path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Daily AI Chain Review")
     parser.add_argument("--output", type=str, default=None, help="Output HTML path")
+    parser.add_argument("--fetch-market", action="store_true", help="Fetch managed market/news data sources")
     args = parser.parse_args()
 
     print("=" * 60)
@@ -37,11 +48,21 @@ def main() -> int:
     print("=" * 60)
 
     events = load_events()
-    print(f"[Data] Loaded events: {len(events)}")
+    print(f"[Data] Loaded manual/template events: {len(events)}")
+    if args.fetch_market:
+        print("[Data] Fetching managed data sources...")
+        manager = DataSourceManager()
+        source_data = manager.fetch_all_groups()
+        save_market_sources(source_data)
+        source_events = events_from_managed_sources(source_data)
+        print(f"[Data] Source-derived AI events: {len(source_events)}")
+        events.extend(source_events)
     if not events:
         print("[WARN] No events found. Add JSON files to data_sources/events.")
 
     analysis = analyze_events(events)
+    if args.fetch_market:
+        analysis["data_source_status"] = source_data.get("source_status", [])
     save_analysis(analysis)
 
     html_path = args.output or str(OUTPUT_DIR / f"report_full_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html")

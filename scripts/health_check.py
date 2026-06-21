@@ -20,9 +20,12 @@ REQUIRED_FILES = [
     "data_sources/_templates/research_report_event.template.json",
     "data_sources/_templates/xiaozuowen_event.template.json",
     "data_sources/_templates/announcement_event.template.json",
+    "data/providers.py",
+    "data/ai_event_adapter.py",
+    "scripts/check_data_sources.py",
     "requirements.txt",
 ]
-REQUIRED_MODULES = ["json", "pathlib"]
+REQUIRED_MODULES = ["json", "pathlib", "requests"]
 
 
 def main() -> int:

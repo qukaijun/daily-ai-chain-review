@@ -32,3 +32,5 @@ active
 - GitHub 仓库已创建并推送：`https://github.com/qukaijun/daily-ai-chain-review`
 - 已增加 `data_sources/_templates/`、`data_sources/announcements/` 与 `scripts/validate_events.py`。
 - `python scripts/validate_events.py` 通过，模板未污染真实事件加载。
+- 已增加数据源管理器与 fallback：`data/providers.py`、`data/ai_event_adapter.py`、`scripts/check_data_sources.py`。
+- `python main.py --fetch-market` 已验证可从当前可用数据源生成 AI 产业链候选事件。

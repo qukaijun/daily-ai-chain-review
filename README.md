@@ -29,6 +29,7 @@ data_sources/events/sample_events.json
 ```powershell
 pip install -r requirements.txt
 python main.py
+python main.py --fetch-market
 python scripts/health_check.py
 ```
 
@@ -66,6 +67,25 @@ python main.py
 ```
 
 具体规则见 `docs/data-import-guide.md`。
+
+## 数据源管理
+
+第一版数据源管理层位于：
+
+```text
+data/providers.py
+data/ai_event_adapter.py
+scripts/check_data_sources.py
+```
+
+它会按配置尝试多个 provider，一个失败时切到下一个，并记录 `provider/status/retrieved_at/error/evidence_layer`。
+
+当前支持：
+
+- `akshare_market`
+- `akshare_news`
+- `eastmoney_flash`
+- `perplexity_search`，需要 `PERPLEXITY_API_KEY`
 
 ## Roadmap
 
