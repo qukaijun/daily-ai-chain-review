@@ -152,6 +152,11 @@ def main() -> int:
         "commands": results,
     }
     _write_summary(summary_path, payload)
+    if final_status != "ok" and args.notify:
+        notify_result = _run([sys.executable, "scripts/notify_daily_review.py", "--send", "--kind", "failure"], log_file)
+        results.append(notify_result)
+        payload["commands"] = results
+        _write_summary(summary_path, payload)
     print("=" * 60)
     print(f"[{final_status.upper()}] daily review run summary: {summary_path}")
     print("=" * 60)

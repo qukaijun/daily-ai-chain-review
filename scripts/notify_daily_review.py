@@ -47,9 +47,12 @@ def _send_wecom(webhook_url: str, notification: dict[str, Any], timeout: int) ->
 
 
 def _emit(notification: dict[str, Any]) -> None:
+    severity = str(notification.get("severity") or "")
+    kind = str(notification.get("kind") or "")
     print("=" * 60)
     print("  Daily Review Notification")
     print("=" * 60)
+    print(f"[INFO] kind={kind} severity={severity}")
     print(notification.get("title", ""))
     print(str(notification.get("text") or ""))
     if notification.get("issues"):
@@ -62,17 +65,22 @@ def main() -> int:
     parser.add_argument("--send", action="store_true", help="Actually send to the configured provider")
     parser.add_argument("--dry-run", action="store_true", help="Preview only, never send")
     parser.add_argument("--require-market-sources", action="store_true", help="Require market-source artifacts")
+    parser.add_argument("--kind", choices=["auto", "success", "failure"], default="auto", help="Notification template")
     parser.add_argument("--json", action="store_true", help="Print notification JSON")
     args = parser.parse_args()
 
-    notification = build_notification(OUTPUT_DIR, require_market_sources=args.require_market_sources)
+    notification = build_notification(
+        OUTPUT_DIR,
+        require_market_sources=args.require_market_sources,
+        kind=args.kind,
+    )
     if args.json:
         print(json.dumps(notification, ensure_ascii=False, indent=2))
     else:
         _emit(notification)
 
     if notification.get("issues"):
-        return 1
+        return 0 if args.dry_run else 1
 
     provider = str(args.provider or "console").lower()
     enabled = bool(NOTIFICATION_CONFIG.get("enabled"))

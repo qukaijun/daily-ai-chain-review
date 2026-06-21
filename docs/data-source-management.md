@@ -224,3 +224,9 @@ python scripts/run_daily_review.py --deep-agents
 - 研究辅助和证据复核边界。
 
 默认 provider 为 `console`，用于本地预览。配置 `DAA_NOTIFY_PROVIDER=wecom` 和 `DAA_NOTIFY_WEBHOOK_URL` 后，可通过 `python scripts/run_daily_review.py --notify` 在日报生成和巡检通过后推送摘要。
+
+通知分级规则：
+
+- 无阻断且数据源无异常：`success`；
+- 报告可用但 provider 存在 `empty/failed`：`warning`；
+- 自动化命令失败：`failure`，附失败命令、退出码、日志路径和日志尾部。

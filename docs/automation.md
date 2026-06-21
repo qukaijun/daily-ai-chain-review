@@ -98,6 +98,20 @@ DAA_NOTIFY_WEBHOOK_URL=https://...
 
 通知只发送紧凑摘要：事件数、验证池、主线、多角色状态、数据源状态和本地 HTML 报告路径，不发送 API key 或报告全文。
 
+通知模板分级：
+
+- `success`：日报生成和巡检通过，数据源无异常。
+- `warning`：日报生成和巡检通过，但存在 provider `empty/failed` 或其他非阻断问题。
+- `failure`：自动运行失败，从 `output_files/daily_runs/latest_run.json` 和日志尾部生成告警。
+
+手动预览：
+
+```powershell
+python scripts/notify_daily_review.py --dry-run --kind success --require-market-sources
+python scripts/notify_daily_review.py --dry-run --kind failure
+python scripts/notify_daily_review.py --dry-run --kind auto
+```
+
 ## Codex 定时器
 
 推荐把 Codex 定时器作为通知和异常诊断层：
@@ -108,6 +122,7 @@ DAA_NOTIFY_WEBHOOK_URL=https://...
 - 不打印 API key，不提交 `output_files/` 运行产物。
 - 默认不启用 LLM 深度复盘；如需启用，在自动化 prompt 或脚本参数中显式加入 `--deep-agents`。
 - 默认不启用 webhook 通知；如需外部推送，在脚本参数中显式加入 `--notify` 并配置环境变量。
+- 自动化失败且传入 `--notify` 时，会额外尝试发送 failure 模板；未启用 webhook 时仍只写入日志。
 
 ## 治理规则
 
