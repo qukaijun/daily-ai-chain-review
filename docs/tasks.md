@@ -26,3 +26,4 @@
 - [ ] N8 增加小作文验证状态追踪
 - [x] N9 增加数据源管理和 fallback 机制
 - [x] N10 在HTML展示数据源状态和事件Provider
+- [x] N11 接入不暴露API key的Perplexity密钥加载机制

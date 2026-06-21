@@ -87,6 +87,24 @@ scripts/check_data_sources.py
 - `eastmoney_flash`
 - `perplexity_search`，需要 `PERPLEXITY_API_KEY`
 
+### Perplexity 密钥
+
+项目会自动读取全局密钥文件和项目本地覆盖文件：
+
+```text
+E:\AI工具\secrets\llm.env
+.env.local
+```
+
+配置 Perplexity：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup_search_secrets.ps1
+python scripts/check_search_config.py
+```
+
+脚本只检查 key 是否存在和长度，不打印完整 key。
+
 ## Roadmap
 
 1. 复制并清理大盘日报工程底座。

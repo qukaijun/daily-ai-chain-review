@@ -23,6 +23,8 @@ REQUIRED_FILES = [
     "data/providers.py",
     "data/ai_event_adapter.py",
     "scripts/check_data_sources.py",
+    "scripts/check_search_config.py",
+    "scripts/setup_search_secrets.ps1",
     "requirements.txt",
 ]
 REQUIRED_MODULES = ["json", "pathlib", "requests"]

@@ -24,6 +24,60 @@ CACHE_DIR.mkdir(exist_ok=True)
 PROJECT_NAME = "每日AI产业链复盘"
 PROJECT_SLUG = "daily-ai-chain-review"
 
+_ORIGINAL_ENV = set(os.environ)
+_LOADED_ENV_FILES: list[str] = []
+_TOOLS_ROOT = ROOT.parent.parent if len(ROOT.parents) >= 2 else ROOT.parent
+_GLOBAL_ENV_PATH = Path(os.getenv("DAA_GLOBAL_ENV_FILE", str(_TOOLS_ROOT / "secrets" / "llm.env")))
+_PLACEHOLDER_VALUES = {
+    "",
+    "sk-your-key-here",
+    "your-api-key",
+    "[密钥]",
+    "<YOUR_API_KEY>",
+    "<YOUR_LLM_API_KEY>",
+    "<YOUR_PERPLEXITY_API_KEY>",
+    "YOUR_API_KEY",
+}
+
+
+def _load_env_file(path: Path) -> None:
+    """Load env files without overriding variables already set by the shell."""
+    if not path.exists():
+        return
+    loaded_any = False
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except UnicodeDecodeError:
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
+    for line in lines:
+        text = line.strip()
+        if not text or text.startswith("#") or "=" not in text:
+            continue
+        key, value = text.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if not key or key in _ORIGINAL_ENV:
+            continue
+        os.environ[key] = value
+        loaded_any = True
+    if loaded_any:
+        _LOADED_ENV_FILES.append(str(path))
+
+
+for _path in (ROOT / ".env", _GLOBAL_ENV_PATH, ROOT / ".env.local", ROOT / "secrets.env"):
+    _load_env_file(_path)
+
+
+def _env(name: str, default: str = "") -> str:
+    value = os.getenv(name, default).strip()
+    lowered = value.lower()
+    if (
+        value in _PLACEHOLDER_VALUES
+        or (name.endswith("API_KEY") and ("your" in lowered or value.startswith("<") or value.startswith("[")))
+    ):
+        return default
+    return value
+
 SOURCE_WEIGHTS = {
     "exchange_filing": 1.0,
     "company_announcement": 1.0,
@@ -94,15 +148,20 @@ DATA_SOURCE_CONFIG = {
 
 
 LLM_CONFIG = {
-    "provider": os.getenv("DAA_LLM_PROVIDER", "openai"),
-    "api_key": os.getenv("DAA_LLM_API_KEY", ""),
-    "base_url": os.getenv("DAA_LLM_BASE_URL", "https://api.openai.com/v1"),
-    "deep_model": os.getenv("DAA_DEEP_MODEL", "gpt-4o"),
-    "quick_model": os.getenv("DAA_QUICK_MODEL", "gpt-4o-mini"),
+    "provider": _env("DAA_LLM_PROVIDER", "openai"),
+    "api_key": _env("DAA_LLM_API_KEY", ""),
+    "base_url": _env("DAA_LLM_BASE_URL", "https://api.openai.com/v1"),
+    "deep_model": _env("DAA_DEEP_MODEL", "gpt-4o"),
+    "quick_model": _env("DAA_QUICK_MODEL", "gpt-4o-mini"),
 }
 
 SEARCH_CONFIG = {
-    "perplexity_api_key": os.getenv("PERPLEXITY_API_KEY", ""),
-    "perplexity_base_url": os.getenv("PERPLEXITY_BASE_URL", "https://api.perplexity.ai"),
-    "perplexity_model": os.getenv("PERPLEXITY_MODEL", "sonar"),
+    "perplexity_api_key": _env("PERPLEXITY_API_KEY", ""),
+    "perplexity_base_url": _env("PERPLEXITY_BASE_URL", "https://api.perplexity.ai"),
+    "perplexity_model": _env("PERPLEXITY_MODEL", "sonar"),
+}
+
+ENV_CONFIG = {
+    "global_env_path": str(_GLOBAL_ENV_PATH),
+    "loaded_env_files": list(_LOADED_ENV_FILES),
 }

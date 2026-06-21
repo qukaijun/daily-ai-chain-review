@@ -11,3 +11,4 @@
 - 研报、小作文和公告统一用 JSON 模板导入；模板放在 `data_sources/_templates/`，不参与报告生成。
 - 公告目录纳入事件加载链路；小作文和非高等级证据不得设置 `model_update_candidate=true`。
 - 数据源接入采用 provider 管理器：每个来源保留状态、错误、获取时间和证据层级；新闻/搜索/行情类数据只进入候选或事件层，不直接改核心假设。
+- 复用大盘日报的密钥管理方式：读取全局 `E:\AI工具\secrets\llm.env` 和项目 `.env.local`，不把 API key 写入仓库或聊天。

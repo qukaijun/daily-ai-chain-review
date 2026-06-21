@@ -31,6 +31,23 @@ python scripts/check_data_sources.py
 python main.py --fetch-market
 ```
 
+## 密钥加载
+
+项目读取密钥的优先级：
+
+```text
+系统环境变量 > 项目 secrets.env > 项目 .env.local > 全局 E:\AI工具\secrets\llm.env > 项目 .env
+```
+
+配置 Perplexity：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup_search_secrets.ps1
+python scripts/check_search_config.py
+```
+
+密钥文件已被 `.gitignore` 排除，不进入 GitHub。
+
 ## 页面展示
 
 运行 `python main.py --fetch-market` 后，HTML 会展示：
