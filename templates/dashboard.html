@@ -101,6 +101,21 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12p
 .row-details{min-width:120px}
 .row-details p{font-size:12px;color:var(--text-body);line-height:1.6;margin-top:6px}
 .event-summary{font-size:12px;color:var(--text-muted);line-height:1.45;margin-top:4px;max-width:420px}
+.event-feed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.event-card{display:grid;grid-template-columns:68px minmax(0,1fr);gap:10px;align-items:start;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:9px 10px}
+.event-score{display:grid;gap:5px;justify-items:start;align-content:start}
+.score-value{border-radius:6px;padding:5px 7px;min-width:60px;text-align:center;font-size:17px;font-weight:800;line-height:1}
+.event-main{min-width:0}
+.event-title-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start}
+.event-title-row h3{font-size:13px;line-height:1.38;margin:0;font-weight:800;overflow-wrap:anywhere}
+.event-status{display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.event-source-tier{display:inline-block;border-radius:20px;background:#F2EFE8;color:var(--text-muted);font-size:12px;font-weight:700;padding:3px 9px;white-space:nowrap}
+.event-summary-compact{font-size:12px;color:var(--text-body);line-height:1.4;margin:4px 0 6px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.event-meta-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:5px;font-size:12px;color:var(--text-body);align-items:start}
+.event-meta-grid span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#F7F7F2;border:1px solid #ECE8DF;border-radius:6px;padding:4px 6px}
+.event-meta-grid strong{color:var(--text-muted);font-size:11px;margin-right:4px}
+.event-details{margin-top:6px;border-top:1px solid var(--line);padding-top:5px}
+.event-details p{font-size:12px;color:var(--text-body);line-height:1.6;margin-top:5px}
 .source-mini{display:grid;grid-template-columns:1fr auto;gap:2px 8px;border-top:1px solid var(--line);padding:7px 0}
 .source-mini:first-child{border-top:none}
 .source-mini span{font-size:12px;font-weight:700}
@@ -142,6 +157,12 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12p
   .flow-rail{grid-template-columns:1fr 1fr}
   .butler-grid{grid-template-columns:1fr 1fr 1fr}
   .chain-strip{display:grid;grid-template-columns:1fr 1fr}
+  .event-feed{grid-template-columns:1fr}
+  .event-card{grid-template-columns:1fr;gap:8px}
+  .event-score{display:flex;align-items:center}
+  .event-title-row{grid-template-columns:1fr}
+  .event-status{justify-content:flex-start}
+  .event-meta-grid{grid-template-columns:1fr 1fr}
   .chain-arrow{display:none}
   .hero-meta{text-align:left}
   h1{font-size:24px}
@@ -219,13 +240,8 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12p
 
     <section class="section">
       <h2>事件影响表</h2>
-      <div class="section-sub">默认只展示核心影响，来源、证据和验证细节放在每行展开里。</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>时间</th><th>事件</th><th>方向</th><th>环节</th><th>相关个股</th><th>分数</th><th>验证状态</th><th>展开</th></tr></thead>
-          <tbody>{{EVENT_ROWS}}</tbody>
-        </table>
-      </div>
+      <div class="section-sub">按事件流展示核心影响：分数、方向、时间、环节、个股默认可扫读，完整摘要和证据折叠。</div>
+      <div class="event-feed">{{EVENT_ROWS}}</div>
     </section>
 
     <section class="section">

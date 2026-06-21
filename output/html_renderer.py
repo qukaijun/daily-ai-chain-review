@@ -186,6 +186,18 @@ def _clip(value: Any, limit: int = 180) -> str:
     return text[: limit - 1].rstrip() + "…"
 
 
+def _compact_items(values: Any, limit: int = 3, empty: str = "暂无") -> str:
+    if not isinstance(values, list):
+        return empty
+    clean = [str(item).strip() for item in values if str(item or "").strip()]
+    if not clean:
+        return empty
+    text = "、".join(clean[:limit])
+    if len(clean) > limit:
+        text += f" +{len(clean) - limit}"
+    return text
+
+
 def _source_counts(status_items: Any) -> dict[str, int]:
     result = {"ok": 0, "empty": 0, "failed": 0}
     if not isinstance(status_items, list):
@@ -382,26 +394,45 @@ def _multi_agent_cards(multi_agent: dict[str, Any]) -> str:
 
 def _events_rows(events: list[dict[str, Any]]) -> str:
     if not events:
-        return '<tr><td colspan="8">暂无事件</td></tr>'
-    rows = []
+        return '<div class="empty compact">暂无事件</div>'
+    cards = []
     for event in events:
         score = float(event.get("score", 0))
         quality = event.get("source_quality", {})
         provider = event.get("provider") or event.get("_source_file") or event.get("source_bucket") or "manual"
         status = str(event.get("verification_status") or "not_required")
         status_label = str(event.get("verification_status_label") or status)
-        stocks = "、".join(
+        stocks_all = [
             f'{s.get("name", "")}({s.get("code", "")})'
-            for s in event.get("related_stocks", [])[:8]
-        )
+            for s in event.get("related_stocks", [])
+            if isinstance(s, dict) and (s.get("name") or s.get("code"))
+        ]
+        stocks = _compact_items(stocks_all, limit=4)
+        chain_text = _compact_items(event.get("chain_labels", []), limit=3)
+        bull_case = _clip(event.get("bull_case"), 180)
+        bear_case = _clip(event.get("bear_case"), 180)
+        source_label = quality.get("label", event.get("source_type", ""))
+        impact_note = bull_case if score > 0 else bear_case if score < 0 else ""
+        summary = _clip(impact_note or event.get("summary"), 135)
+        full_summary = _clip(event.get("summary"), 520)
+        title = _clip(event.get("title"), 96)
         details = []
-        summary = _clip(event.get("summary"), 260)
-        if summary:
-            details.append(f'<p><strong>摘要：</strong>{_esc(summary)}</p>')
-        details.append(f'<p><strong>来源：</strong>{_esc(quality.get("label", event.get("source_type", "")))} / {_esc(provider)}</p>')
+        if full_summary:
+            details.append(f'<p><strong>完整摘要：</strong>{_esc(full_summary)}</p>')
+        if bull_case:
+            details.append(f'<p><strong>利好路径：</strong>{_esc(bull_case)}</p>')
+        if bear_case:
+            details.append(f'<p><strong>利空/风险：</strong>{_esc(bear_case)}</p>')
+        details.append(f'<p><strong>来源：</strong>{_esc(source_label)} / {_esc(provider)}</p>')
         link = _source_link(event)
         if link:
             details.append(f'<p><strong>链接：</strong>{link}</p>')
+        policy_note = str(event.get("verification_policy_note") or "").strip()
+        verification_note = str(event.get("verification_note") or "").strip()
+        if policy_note:
+            details.append(f'<p><strong>证据规则：</strong>{_esc(policy_note)}</p>')
+        if verification_note:
+            details.append(f'<p><strong>验证备注：</strong>{_esc(verification_note)}</p>')
         required = str(event.get("required_confirmation") or "").strip()
         if required:
             details.append(f'<p><strong>下一步验证：</strong>{_esc(required)}</p>')
@@ -412,21 +443,34 @@ def _events_rows(events: list[dict[str, Any]]) -> str:
         )
         if extra:
             details.append(extra)
-        rows.append(
-            "<tr>"
-            f"<td>{_esc(event.get('published_at', ''))}</td>"
-            f"<td><strong>{_esc(event.get('title', ''))}</strong><div class=\"event-summary\">{_esc(summary)}</div></td>"
-            f"<td><span class=\"tag {_tag_class(score)}\">{_esc(event.get('direction_label'))}</span></td>"
-            f"<td>{_esc('、'.join(event.get('chain_labels', [])))}</td>"
-            f"<td>{_esc(stocks)}</td>"
-            f"<td>{score:+.2f}</td>"
-            f"<td><span class=\"tag {_status_tag_class(status)}\">{_esc(status_label)}</span></td>"
-            '<td><details class="row-details"><summary>证据/来源</summary>'
+        cards.append(
+            '<article class="event-card">'
+            '<div class="event-score">'
+            f'<span class="score-value {_tag_class(score)}">{score:+.2f}</span>'
+            f'<span class="tag {_tag_class(score)}">{_esc(event.get("direction_label"))}</span>'
+            "</div>"
+            '<div class="event-main">'
+            '<div class="event-title-row">'
+            f'<h3>{_esc(title)}</h3>'
+            '<div class="event-status">'
+            f'<span class="tag {_status_tag_class(status)}">{_esc(status_label)}</span>'
+            f'<span class="event-source-tier">{_esc(source_label)}</span>'
+            "</div>"
+            "</div>"
+            f'<p class="event-summary-compact">{_esc(summary)}</p>'
+            '<div class="event-meta-grid">'
+            f'<span><strong>时</strong>{_esc(event.get("published_at", ""))}</span>'
+            f'<span><strong>链</strong>{_esc(chain_text)}</span>'
+            f'<span><strong>股</strong>{_esc(stocks)}</span>'
+            f'<span><strong>源</strong>{_esc(provider)}</span>'
+            "</div>"
+            '<details class="event-details"><summary>展开证据、来源与验证</summary>'
             + "".join(details)
-            + "</details></td>"
-            "</tr>"
+            + "</details>"
+            "</div>"
+            "</article>"
         )
-    return "\n".join(rows)
+    return "\n".join(cards)
 
 
 def _front_event_rows(events: list[dict[str, Any]]) -> str:
