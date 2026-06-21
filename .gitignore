@@ -17,6 +17,7 @@ output_files/*.html
 output_files/*.json
 output_files/*.png
 output_files/screenshots/
+output_files/share/
 output_files/daily_runs/
 output_files/notification_logs/
 dist/
