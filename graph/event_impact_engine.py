@@ -98,6 +98,29 @@ def _stock_lookup(stock_pool: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return lookup
 
 
+def _event_stock_codes(event: dict[str, Any]) -> set[str]:
+    return {str(code) for code in event.get("affected_stocks", []) if str(code)}
+
+
+def _build_announcement_evidence(events: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    evidence: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for event in events:
+        if str(event.get("source_type")) not in {"company_announcement", "exchange_filing", "financial_report"}:
+            continue
+        for code in _event_stock_codes(event):
+            evidence[code].append(
+                {
+                    "id": event.get("id", ""),
+                    "title": event.get("title", ""),
+                    "published_at": event.get("published_at", ""),
+                    "source_type": event.get("source_type", ""),
+                    "source_url": event.get("source_url", ""),
+                    "announcement_type": event.get("announcement_type", ""),
+                }
+            )
+    return evidence
+
+
 def _score_event(event: dict[str, Any]) -> dict[str, Any]:
     source_type = str(event.get("source_type", "manual"))
     quality = _source_quality(source_type)
@@ -126,6 +149,7 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
     pool = stock_pool or load_stock_pool()
     stock_lookup = _stock_lookup(pool)
     stock_segments = _segment_lookup(pool)
+    announcement_evidence = _build_announcement_evidence(events)
 
     enriched_events: list[dict[str, Any]] = []
     segment_scores: dict[str, float] = defaultdict(float)
@@ -163,6 +187,16 @@ def analyze_events(events: list[dict[str, Any]], stock_pool: dict[str, Any] | No
         item["verification_status"] = verification["status"]
         item["verification_status_label"] = verification["label"]
         item["verification_policy_note"] = verification["note"]
+        matched_evidence: list[dict[str, Any]] = []
+        if source_type not in {"company_announcement", "exchange_filing", "financial_report"}:
+            for code in affected_codes:
+                matched_evidence.extend(announcement_evidence.get(code, []))
+        if matched_evidence and item["verification_status"] == "pending":
+            item["verification_status"] = "upgraded"
+            item["verification_status_label"] = "已找到公告候选"
+            item["verification_policy_note"] = "已命中同个股公告候选，需人工核对是否验证原事件。"
+            item["verification_note"] = "已命中同个股公告候选，等待人工复核关联关系。"
+        item["upgrade_evidence"] = matched_evidence[:5]
         item["model_update"] = scored["source_quality"]["tier"] == "P0"
         item["needs_verification"] = (
             scored["source_quality"]["tier"] in {"P2", "P3"}

@@ -7,12 +7,13 @@ import json
 import re
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Callable
 
 import requests
 
-from config import DATA_SOURCE_CONFIG, SEARCH_CONFIG
+from config import ANNOUNCEMENT_CONFIG, DATA_SOURCE_CONFIG, SEARCH_CONFIG
+from graph.event_impact_engine import load_stock_pool
 
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -111,6 +112,7 @@ class DataSourceManager:
             "akshare_news": self._akshare_news,
             "eastmoney_flash": self._eastmoney_flash,
             "perplexity_search": self._perplexity_search,
+            "akshare_announcements": self._akshare_announcements,
         }
         self.status_log: list[dict[str, Any]] = []
 
@@ -153,7 +155,13 @@ class DataSourceManager:
             ok = bool(data) and not (isinstance(data, dict) and data.get("error"))
             status = "ok" if ok else "empty"
             error = data.get("error", "") if isinstance(data, dict) else ""
-            evidence_layer = "event" if provider in {"eastmoney_flash", "akshare_news", "perplexity_search"} else "candidate"
+            evidence_layer = (
+                "audit_source"
+                if provider in {"akshare_announcements"}
+                else "event"
+                if provider in {"eastmoney_flash", "akshare_news", "perplexity_search"}
+                else "candidate"
+            )
             result = self._result(provider, status, data, error=error, evidence_layer=evidence_layer)
         except Exception as exc:
             result = self._result(provider, "failed", {}, error=str(exc)[:200])
@@ -238,6 +246,81 @@ class DataSourceManager:
                 }
             )
         return {"count": len(items), "items": items}
+
+    def _ai_stock_codes(self) -> set[str]:
+        pool = load_stock_pool()
+        codes: set[str] = set()
+        for segment in pool.values():
+            for stock in segment.get("stocks", []):
+                market = str(stock.get("market", ""))
+                code = str(stock.get("code", ""))
+                if market == "A" and code:
+                    codes.add(code)
+        return codes
+
+    def _akshare_announcements(self) -> dict[str, Any]:
+        import akshare as ak
+
+        from config import AI_KEYWORDS
+
+        ai_codes = self._ai_stock_codes()
+        lookback_days = max(int(ANNOUNCEMENT_CONFIG.get("lookback_days", 3)), 1)
+        max_items = max(int(ANNOUNCEMENT_CONFIG.get("max_items", 80)), 1)
+        items: list[dict[str, Any]] = []
+        seen_urls: set[str] = set()
+        fetch_errors: list[str] = []
+
+        for offset in range(lookback_days):
+            day = datetime.now() - timedelta(days=offset)
+            date_text = day.strftime("%Y%m%d")
+            try:
+                df = ak.stock_notice_report(symbol="全部", date=date_text)
+            except Exception as exc:
+                fetch_errors.append(f"{date_text}: {str(exc)[:120]}")
+                continue
+            if df is None or df.empty:
+                continue
+            for _, row in df.iterrows():
+                code = str(row.get("代码", "")).strip()
+                title = str(row.get("公告标题", "")).strip()
+                announce_type = str(row.get("公告类型", "")).strip()
+                text = f"{title} {announce_type}"
+                if code not in ai_codes and not any(keyword.lower() in text.lower() for keyword in AI_KEYWORDS):
+                    continue
+                url = str(row.get("网址", "")).strip()
+                if url and url in seen_urls:
+                    continue
+                if url:
+                    seen_urls.add(url)
+                items.append(
+                    {
+                        "title": title,
+                        "time": str(row.get("公告日期", date_text)),
+                        "source": "东方财富公告大全",
+                        "code": code,
+                        "name": str(row.get("名称", "")).strip(),
+                        "announcement_type": announce_type,
+                        "url": url,
+                        "date": date_text,
+                    }
+                )
+                if len(items) >= max_items:
+                    break
+            if len(items) >= max_items:
+                break
+
+        result: dict[str, Any] = {
+            "count": len(items),
+            "items": items,
+            "lookback_days": lookback_days,
+            "max_items": max_items,
+            "source": "akshare.stock_notice_report",
+        }
+        if fetch_errors:
+            result["fetch_errors"] = fetch_errors[:5]
+        if not items and fetch_errors:
+            result["error"] = "；".join(fetch_errors[:2])
+        return result
 
     def _parse_structured_content(self, content: str) -> tuple[dict[str, Any] | None, str]:
         text = content.strip()

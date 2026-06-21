@@ -47,6 +47,23 @@ def _source_link(event: dict[str, Any]) -> str:
     return f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">来源</a>'
 
 
+def _upgrade_evidence_note(event: dict[str, Any]) -> str:
+    evidence = event.get("upgrade_evidence", [])
+    if not isinstance(evidence, list) or not evidence:
+        return ""
+    links = []
+    for item in evidence[:3]:
+        if not isinstance(item, dict):
+            continue
+        title = _esc(item.get("title", "公告候选"))
+        url = str(item.get("source_url") or "").strip()
+        if url:
+            links.append(f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">{title}</a>')
+        else:
+            links.append(title)
+    return '<div class="upgrade-evidence">公告候选：' + "；".join(links) + "</div>"
+
+
 def _events_rows(events: list[dict[str, Any]]) -> str:
     if not events:
         return '<tr><td colspan="11">暂无事件</td></tr>'
@@ -160,6 +177,7 @@ def _verification_cards(events: list[dict[str, Any]]) -> str:
             f'<p>{_esc(event.get("summary"))}</p>'
             f'<div class="verify-action">验证：{_esc(event.get("required_confirmation"))}</div>'
             f'<div class="verify-policy">{_esc(event.get("verification_policy_note", ""))}</div>'
+            f'{_upgrade_evidence_note(event)}'
             f'<div class="source-note">{source_link} {_esc(citation_note[:240])}</div>'
             "</div>"
         )

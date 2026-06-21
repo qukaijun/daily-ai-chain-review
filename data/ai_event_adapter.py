@@ -23,6 +23,8 @@ SEGMENT_KEYWORDS = {
 
 POSITIVE_WORDS = ["上修", "增长", "中标", "订单", "突破", "发布", "合作", "扩产", "涨", "创新高", "加速"]
 NEGATIVE_WORDS = ["下修", "亏损", "监管", "延迟", "取消", "下跌", "风险", "处罚", "制裁", "降价"]
+ANNOUNCEMENT_NEGATIVE_TYPES = ["风险", "诉讼", "处罚", "退市", "减持", "冻结", "质押", "亏损"]
+ANNOUNCEMENT_POSITIVE_TYPES = ["回购", "股权激励", "中标", "订单", "合同", "投资", "分红", "增持", "业绩预增"]
 
 STOCK_ALIASES = {
     "nvidia": "NVDA",
@@ -62,6 +64,17 @@ def _match_segments(text: str) -> list[str]:
         if any(keyword.lower() in text.lower() for keyword in keywords):
             matched.append(segment)
     return matched
+
+
+def _segments_for_stock(code: str) -> list[str]:
+    pool = load_stock_pool()
+    segments: list[str] = []
+    for segment_id, segment in pool.items():
+        for stock in segment.get("stocks", []):
+            if str(stock.get("code", "")) == code:
+                segments.append(segment_id)
+                break
+    return segments
 
 
 def _match_stocks(text: str, segment_ids: list[str]) -> list[str]:
@@ -209,21 +222,62 @@ def events_from_managed_sources(managed_data: dict[str, Any]) -> list[dict[str, 
     return events
 
 
+def _provider_source_type(provider: str) -> str:
+    if "announcement" in provider:
+        return "company_announcement"
+    if "perplexity" in provider:
+        return "search_api"
+    return "news"
+
+
+def _provider_verification_status(provider: str) -> str:
+    if "announcement" in provider:
+        return "not_required"
+    return "pending"
+
+
+def _provider_weight(provider: str, structured: bool) -> int:
+    if "announcement" in provider:
+        return 5
+    if structured:
+        return 3
+    return 2
+
+
+def _provider_direction(provider: str, item: dict[str, Any], text: str) -> str:
+    if "announcement" not in provider:
+        return str(item.get("direction") or _direction(text))
+    announce_type = str(item.get("announcement_type") or "")
+    title = str(item.get("title") or "")
+    joined = f"{announce_type} {title}"
+    if any(word in joined for word in ANNOUNCEMENT_NEGATIVE_TYPES):
+        return "negative"
+    if any(word in joined for word in ANNOUNCEMENT_POSITIVE_TYPES):
+        return "positive"
+    return "unknown"
+
+
 def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> dict[str, Any] | None:
     text = " ".join(
         str(item.get(key, ""))
         for key in ("title", "content", "summary", "impact_reason")
         if item.get(key)
     )
-    if not text or not _is_ai_related(text):
+    code = str(item.get("code") or "").strip()
+    stock_segments = _segments_for_stock(code) if code else []
+    is_ai_stock_announcement = "announcement" in provider and bool(stock_segments)
+    if not text or (not _is_ai_related(text) and not is_ai_stock_announcement):
         return None
 
     structured_segments = [str(x) for x in _as_list(item.get("chain_segments")) if str(x)]
-    segments = structured_segments or _match_segments(text)
+    segments = structured_segments or _match_segments(text) or stock_segments
     if not segments:
         segments = ["cloud_models"]
     related_companies = " ".join(str(x) for x in _as_list(item.get("related_companies")))
-    affected = _match_stocks(" ".join([text, related_companies]), segments)
+    affected = _match_stocks(" ".join([text, related_companies, code]), segments)
+    if code and code not in affected:
+        affected.append(code)
+        affected = sorted(set(affected))
     title = str(item.get("title") or text[:60])
     source_name = str(item.get("source") or provider)
     citations = _as_list(item.get("citations"))
@@ -231,17 +285,20 @@ def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> 
     source_url = _first_url(item.get("url"), item.get("source_url"), citations, search_results)
     required_confirmation = str(item.get("required_confirmation") or "")
     if not required_confirmation:
-        required_confirmation = "等待公司公告、交易所文件、财报、调研纪要或多家可靠来源交叉确认。"
+        if "announcement" in provider:
+            required_confirmation = "人工复核公告原文、公告类型、金额、期间、约束条件和会计确认口径。"
+        else:
+            required_confirmation = "等待公司公告、交易所文件、财报、调研纪要或多家可靠来源交叉确认。"
 
     return {
         "id": _event_id(provider, title),
         "title": title,
-        "source_type": "search_api" if "perplexity" in provider else "news",
+        "source_type": _provider_source_type(provider),
         "source_name": source_name,
         "published_at": str(item.get("time") or item.get("published_at") or retrieved_at),
         "chain_segments": segments,
-        "direction": str(item.get("direction") or _direction(text)),
-        "weight": 3 if item.get("structured") else 2,
+        "direction": _provider_direction(provider, item, text),
+        "weight": _provider_weight(provider, bool(item.get("structured"))),
         "summary": str(item.get("summary") or text)[:800],
         "affected_stocks": affected,
         "bull_case": str(
@@ -259,6 +316,11 @@ def _event_from_item(provider: str, retrieved_at: str, item: dict[str, Any]) -> 
         "search_results": search_results,
         "retrieved_at": retrieved_at,
         "provider": provider,
-        "verification_status": "pending",
-        "verification_note": "自动数据源生成，等待人工复核。",
+        "verification_status": _provider_verification_status(provider),
+        "verification_note": (
+            "公告索引命中，需人工复核公告原文、金额、期间和会计确认口径。"
+            if "announcement" in provider
+            else "自动数据源生成，等待人工复核。"
+        ),
+        "announcement_type": str(item.get("announcement_type") or ""),
     }

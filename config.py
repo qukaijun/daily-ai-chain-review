@@ -145,6 +145,12 @@ DATA_SOURCE_CONFIG = {
     "market_snapshot": ["akshare_market"],
     "news": ["eastmoney_flash", "akshare_news"],
     "search_enrichment": ["perplexity_search"],
+    "announcement_index": ["akshare_announcements"],
+}
+
+ANNOUNCEMENT_CONFIG = {
+    "lookback_days": int(_env("DAA_ANNOUNCEMENT_LOOKBACK_DAYS", "3") or 3),
+    "max_items": int(_env("DAA_ANNOUNCEMENT_MAX_ITEMS", "80") or 80),
 }
 
 

@@ -86,8 +86,11 @@ scripts/check_data_sources.py
 - `akshare_news`
 - `eastmoney_flash`
 - `perplexity_search`，需要 `PERPLEXITY_API_KEY`
+- `akshare_announcements`，东方财富公告大全索引，命中 AI 股票池/关键词后进入高等级证据候选
 
 `perplexity_search` 属于独立增强源，配置 key 后会在 `python main.py --fetch-market` 中单独运行，不会被东方财富快讯或 AkShare 新闻挡住。
+
+`akshare_announcements` 属于独立公告索引源。系统会把同个股的低证据事件标记为“已找到公告候选”，但不会自动改核心假设，仍需人工核对公告原文、金额、期间和会计确认口径。
 
 ### Perplexity 密钥
 

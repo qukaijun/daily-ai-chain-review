@@ -12,6 +12,7 @@
 | akshare_news | 财经新闻 | event | AkShare 新闻接口 |
 | eastmoney_flash | 东方财富快讯 | event | 直连快讯接口 |
 | perplexity_search | AI产业链结构化搜索增强 | event | 需要 `PERPLEXITY_API_KEY`，优先返回事件数组、引用链接和搜索结果 |
+| akshare_announcements | 东方财富公告大全 | audit_source | 拉取最近公告索引，命中 AI 股票池/关键词后进入公告候选 |
 
 ## Fallback 顺序
 
@@ -22,6 +23,7 @@ DATA_SOURCE_CONFIG = {
     "market_snapshot": ["akshare_market"],
     "news": ["eastmoney_flash", "akshare_news"],
     "search_enrichment": ["perplexity_search"],
+    "announcement_index": ["akshare_announcements"],
 }
 ```
 
@@ -54,8 +56,20 @@ DATA_SOURCE_CONFIG = {
 ```powershell
 python scripts/check_data_sources.py
 python scripts/check_data_sources.py perplexity_search
+python scripts/check_announcement_provider.py
 python main.py --fetch-market
 ```
+
+## 公告索引
+
+`akshare_announcements` 复用 AkShare 的 `stock_notice_report(symbol="全部", date="YYYYMMDD")`，按最近若干天拉取东方财富公告大全，再用 AI 股票池和 AI 关键词过滤。
+
+公告索引的写入规则：
+
+- 输出 `company_announcement` 事件，证据层级为 `P0/audit_source`。
+- 默认 `verification_status=not_required`，但仍要求人工复核公告原文、金额、期间和会计确认口径。
+- 若低证据事件命中同一只股票的公告候选，会在验证池里标记为 `已找到公告候选`，但不会自动认定原事件已被验证。
+- 配置项：`DAA_ANNOUNCEMENT_LOOKBACK_DAYS`、`DAA_ANNOUNCEMENT_MAX_ITEMS`。
 
 ## 密钥加载
 
@@ -93,3 +107,4 @@ python scripts/check_search_config.py
 - 只有公告、交易所文件、财报等高等级证据可在复核后影响核心假设。
 - provider 失败必须记录，不静默吞掉。
 - 小作文、传闻、搜索增强事件必须保留 `verification_status` 和下一步验证动作。
+- 公告索引只能作为高等级证据候选；是否升级核心假设必须人工核对原文。

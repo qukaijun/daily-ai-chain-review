@@ -14,3 +14,5 @@
 - 复用大盘日报的密钥管理方式：读取全局 `E:\AI工具\secrets\llm.env` 和项目 `.env.local`，不把 API key 写入仓库或聊天。
 - Perplexity 作为独立搜索增强源，优先请求结构化事件和引用；失败时回退摘要解析，结果默认进入 `search_api` 与验证池。
 - 小作文、传闻、新闻和搜索增强事件采用验证状态生命周期：`pending/confirmed/rejected/expired/upgraded/not_required`。
+- 公告索引采用 AkShare `stock_notice_report` 拉取东方财富公告大全，命中 AI 股票池或 AI 关键词后作为 `company_announcement` 高等级证据候选。
+- 低证据事件命中同个股公告时只标记“已找到公告候选”，不自动认定原事件已验证，也不自动修改核心假设。
