@@ -62,10 +62,19 @@ class DataSourceManager:
             last_result = result
         return last_result or self._result(source_group, "failed", {}, error="no provider attempted")
 
+    def fetch_group(self, source_group: str) -> ProviderResult:
+        """Fetch a logical source group.
+
+        Most groups use fallback-first semantics. Search enrichment is
+        intentionally independent so a working news source does not prevent
+        Perplexity from running when configured.
+        """
+        return self.fetch_first(source_group)
+
     def fetch_all_groups(self) -> dict[str, Any]:
         data = {}
         for group in DATA_SOURCE_CONFIG:
-            data[group] = self.fetch_first(group).to_dict()
+            data[group] = self.fetch_group(group).to_dict()
         data["source_status"] = self.status_log
         return data
 
@@ -80,7 +89,8 @@ class DataSourceManager:
             ok = bool(data) and not (isinstance(data, dict) and data.get("error"))
             status = "ok" if ok else "empty"
             error = data.get("error", "") if isinstance(data, dict) else ""
-            result = self._result(provider, status, data, error=error)
+            evidence_layer = "event" if provider in {"eastmoney_flash", "akshare_news", "perplexity_search"} else "candidate"
+            result = self._result(provider, status, data, error=error, evidence_layer=evidence_layer)
         except Exception as exc:
             result = self._result(provider, "failed", {}, error=str(exc)[:200])
         self.status_log.append(result.to_dict())
@@ -175,11 +185,19 @@ class DataSourceManager:
             "messages": [
                 {
                     "role": "system",
-                    "content": "Return concise AI industry-chain news with source citations.",
+                    "content": (
+                        "Return concise AI industry-chain news with source citations. "
+                        "Focus on facts, source dates, and what still needs verification. "
+                        "Do not provide trading advice."
+                    ),
                 },
                 {
                     "role": "user",
-                    "content": "今天AI产业链、算力、光模块、AI服务器、液冷、芯片、AI应用有哪些重要新闻？",
+                    "content": (
+                        "请检索最近24小时全球和中国AI产业链重要变化，覆盖算力、GPU/HBM、"
+                        "AI服务器、光模块、液冷、数据中心、大模型、AI应用、机器人。"
+                        "每条请说明来源、时间、影响环节、可能相关公司和需要验证的证据。"
+                    ),
                 },
             ],
         }

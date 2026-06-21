@@ -143,7 +143,8 @@ AI_KEYWORDS = [
 
 DATA_SOURCE_CONFIG = {
     "market_snapshot": ["akshare_market"],
-    "news": ["eastmoney_flash", "akshare_news", "perplexity_search"],
+    "news": ["eastmoney_flash", "akshare_news"],
+    "search_enrichment": ["perplexity_search"],
 }
 
 

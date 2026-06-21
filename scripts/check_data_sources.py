@@ -13,8 +13,13 @@ from data.providers import DataSourceManager  # noqa: E402
 
 
 def main() -> int:
+    provider = sys.argv[1] if len(sys.argv) > 1 else ""
     manager = DataSourceManager()
-    data = manager.fetch_all_groups()
+    if provider:
+        result = manager.fetch_provider(provider)
+        data = {"source_status": [result.to_dict()]}
+    else:
+        data = manager.fetch_all_groups()
     print("=" * 60)
     print("  Data Source Check")
     print("=" * 60)

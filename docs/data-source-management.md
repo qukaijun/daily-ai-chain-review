@@ -20,14 +20,18 @@
 ```python
 DATA_SOURCE_CONFIG = {
     "market_snapshot": ["akshare_market"],
-    "news": ["eastmoney_flash", "akshare_news", "perplexity_search"],
+    "news": ["eastmoney_flash", "akshare_news"],
+    "search_enrichment": ["perplexity_search"],
 }
 ```
+
+说明：`news` 组采用 fallback，第一个可用源成功后不再尝试后续新闻源；`search_enrichment` 独立运行，所以配置 Perplexity 后会单独补充海外/产业链情报。
 
 ## 使用
 
 ```powershell
 python scripts/check_data_sources.py
+python scripts/check_data_sources.py perplexity_search
 python main.py --fetch-market
 ```
 

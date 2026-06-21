@@ -36,3 +36,4 @@ active
 - `python main.py --fetch-market` 已验证可从当前可用数据源生成 AI 产业链候选事件。
 - HTML 已展示数据源状态和事件 Provider/文件来源，便于追踪自动事件来源与 provider 故障。
 - 已复用大盘日报的全局 env 密钥加载机制；当前尚未配置 `PERPLEXITY_API_KEY`，配置后可启用 `perplexity_search` provider。
+- 已将 Perplexity 从新闻 fallback 末位改为独立 `search_enrichment` 增强源；未配置 key 时页面显示 `perplexity_search empty`，不阻塞日报。

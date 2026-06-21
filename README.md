@@ -87,6 +87,8 @@ scripts/check_data_sources.py
 - `eastmoney_flash`
 - `perplexity_search`，需要 `PERPLEXITY_API_KEY`
 
+`perplexity_search` 属于独立增强源，配置 key 后会在 `python main.py --fetch-market` 中单独运行，不会被东方财富快讯或 AkShare 新闻挡住。
+
 ### Perplexity 密钥
 
 项目会自动读取全局密钥文件和项目本地覆盖文件：
