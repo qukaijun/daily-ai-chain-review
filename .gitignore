@@ -17,6 +17,7 @@ output_files/*.html
 output_files/*.json
 output_files/*.png
 output_files/screenshots/
+output_files/daily_runs/
 dist/
 
 # OS

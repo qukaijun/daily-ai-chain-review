@@ -72,6 +72,8 @@ python scripts/check_data_sources.py perplexity_research
 python scripts/check_data_sources.py perplexity_rumors
 python scripts/check_announcement_provider.py
 python main.py --fetch-market
+python scripts/run_daily_review.py
+python scripts/check_latest_run.py --require-today --require-market-sources
 ```
 
 ## 公告索引
@@ -190,3 +192,11 @@ python scripts/check_search_config.py
 - 公告索引只能作为高等级证据候选；是否升级核心假设必须人工核对原文。
 - 公告详情摘要和事实标记只用于复核效率，不替代公告原文。
 - 人工确认写回必须保留证据标题、链接、复核结论和是否进入模型复核候选。
+
+## 每日自动生成与巡检
+
+`scripts/run_daily_review.py` 是当前推荐的生产入口。它会先做健康检查和输入校验，再运行 `main.py --fetch-market`，最后用 `scripts/check_latest_run.py` 校验最新 HTML/JSON 产物。
+
+巡检只判断报告是否可用，不把自动新闻、研报或传闻升级为事实确认。Perplexity 未配置时会记录为 `empty`，只要仍有其他 provider 可用，不阻断日报生成。
+
+Windows 计划任务安装脚本见 `scripts/install_daily_task.ps1`，详细说明见 `docs/automation.md`。

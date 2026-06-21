@@ -31,9 +31,13 @@ REQUIRED_FILES = [
     "scripts/check_announcement_provider.py",
     "scripts/check_multi_agent_layer.py",
     "scripts/check_verification_clusters.py",
+    "scripts/check_latest_run.py",
+    "scripts/run_daily_review.py",
+    "scripts/install_daily_task.ps1",
     "scripts/check_search_config.py",
     "scripts/validate_verifications.py",
     "scripts/setup_search_secrets.ps1",
+    "docs/automation.md",
     "requirements.txt",
 ]
 REQUIRED_MODULES = ["json", "pathlib", "requests"]

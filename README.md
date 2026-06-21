@@ -32,6 +32,7 @@ pip install -r requirements.txt
 python main.py
 python main.py --fetch-market
 python scripts/health_check.py
+python scripts/run_daily_review.py
 ```
 
 输出文件在：
@@ -98,6 +99,24 @@ scripts/check_data_sources.py
 
 `akshare_announcements` 属于独立公告索引源。系统会把同个股的低证据事件标记为“已找到公告候选”，但不会自动改核心假设，仍需人工核对公告原文、金额、期间和会计确认口径。
 
+## 每日自动化
+
+每日自动生成脚本：
+
+```powershell
+python scripts/run_daily_review.py
+```
+
+脚本会执行健康检查、事件校验、验证写回校验、密钥泄露扫描、多角色层检查、自动验证聚类检查、`main.py --fetch-market` 和最新产物巡检。日志写入 `output_files/daily_runs/`。
+
+安装 Windows 交易日计划任务：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/install_daily_task.ps1
+```
+
+详细规则见 `docs/automation.md`。
+
 ### Perplexity 密钥
 
 项目会自动读取全局密钥文件和项目本地覆盖文件：
@@ -124,3 +143,4 @@ python scripts/check_search_config.py
 4. 接入研报、小作文、公告的文件导入。
 5. 改造 HTML 页面为产业链热力图、事件表、个股影响矩阵。
 6. 已加入本地确定性的 TradingAgents 式多角色分析；后续可扩展为 LLM 深度版。
+7. 已加入每日自动生成脚本、最新产物巡检和 Windows 计划任务安装脚本。
